@@ -1,0 +1,171 @@
+/* ============================================
+   منصة الأستاذ أحمد لتدريس اللغة العربية
+   نظام التصميم: وحي المخطوطة العربية
+   الألوان: أخضر زُمردي داكن + ذهبي دافئ + كريمي كورق قديم
+   ============================================ */
+
+:root{
+  --paper:#F6F1E4;
+  --paper-2:#EFE6D2;
+  --ink:#1F3B33;          /* أخضر زمردي داكن كالحبر */
+  --ink-2:#2E5449;
+  --gold:#B8863C;         /* ذهبي التذهيب */
+  --gold-light:#D8AE6B;
+  --clay:#A3432F;         /* أحمر طيني للتنبيهات */
+  --line:#D9CBA6;
+  --success:#3D7A4E;
+  --danger:#B03A2E;
+  --shadow: 0 10px 30px -12px rgba(31,59,51,.35);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Tajawal', system-ui, sans-serif;
+  direction:rtl;
+  min-height:100vh;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(184,134,60,.08) 0, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(31,59,51,.06) 0, transparent 40%);
+}
+
+h1,h2,h3,.display{
+  font-family:'Aref Ruqaa', 'Amiri', serif;
+  font-weight:700;
+  color:var(--ink);
+}
+
+/* ===== زخرفة الفاصل - نقش هندسي بسيط ===== */
+.ornament-divider{
+  height:14px;
+  background-image: repeating-linear-gradient(135deg, var(--gold) 0 6px, transparent 6px 12px);
+  opacity:.55;
+  mask-image: linear-gradient(90deg, transparent, black 15%, black 85%, transparent);
+}
+
+/* ===== الشريط العلوي ===== */
+.site-header{
+  background:var(--ink);
+  color:var(--paper);
+  position:sticky;
+  top:0;
+  z-index:40;
+  box-shadow:var(--shadow);
+}
+.brand-mark{
+  width:42px;height:42px;border-radius:10px;
+  background:linear-gradient(160deg, var(--gold-light), var(--gold));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Aref Ruqaa',serif;font-size:22px;color:var(--ink);
+  flex-shrink:0;
+}
+.nav-link{color:var(--paper);opacity:.85;text-decoration:none;padding:.5rem .8rem;border-radius:8px;transition:.2s}
+.nav-link:hover{opacity:1;background:rgba(255,255,255,.08)}
+
+/* ===== بطاقات المراحل ===== */
+.stage-card{
+  background:var(--paper-2);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:1.75rem;
+  box-shadow:var(--shadow);
+  transition:transform .25s ease, box-shadow .25s ease;
+  position:relative;
+  overflow:hidden;
+  text-decoration:none;
+  display:block;
+  color:var(--ink);
+}
+.stage-card::before{
+  content:"";
+  position:absolute; inset:0 0 auto 0; height:5px;
+  background:linear-gradient(90deg, var(--gold), var(--ink-2));
+}
+.stage-card:hover{transform:translateY(-6px); box-shadow:0 18px 40px -14px rgba(31,59,51,.45)}
+.stage-num{
+  font-family:'Aref Ruqaa',serif;
+  font-size:2.4rem;
+  color:var(--gold);
+  opacity:.5;
+  line-height:1;
+}
+
+/* ===== بطاقة عنصر (درس / امتحان) ===== */
+.item-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:1rem 1.25rem;
+  display:flex;
+  align-items:center;
+  gap:.9rem;
+  text-decoration:none;
+  color:var(--ink);
+  box-shadow:0 2px 10px -6px rgba(31,59,51,.2);
+}
+.badge{
+  font-size:.72rem;
+  padding:.2rem .6rem;
+  border-radius:99px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.badge-video{background:#e6f0ee;color:var(--ink-2)}
+.badge-pdf{background:#f6e9df;color:var(--clay)}
+.badge-text{background:#eef1e2;color:var(--success)}
+.badge-exam{background:#f3e6cf;color:var(--gold)}
+
+/* ===== أزرار ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  padding:.65rem 1.4rem;border-radius:10px;font-weight:700;
+  cursor:pointer;border:none;text-decoration:none;transition:.2s;
+  font-family:'Tajawal',sans-serif;
+}
+.btn-primary{background:var(--ink); color:var(--paper)}
+.btn-primary:hover{background:var(--ink-2)}
+.btn-gold{background:var(--gold); color:#fff}
+.btn-gold:hover{background:#a3762f}
+.btn-outline{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:.4rem .9rem;font-size:.85rem;border-radius:8px}
+
+/* ===== نماذج الإدارة ===== */
+.field{
+  width:100%;padding:.65rem .9rem;border-radius:10px;
+  border:1.5px solid var(--line); background:#fff; color:var(--ink);
+  font-family:'Tajawal',sans-serif; font-size:1rem;
+}
+.field:focus{outline:2px solid var(--gold); outline-offset:1px; border-color:var(--gold)}
+label.field-label{font-weight:700;font-size:.9rem;color:var(--ink-2); display:block; margin-bottom:.3rem}
+
+/* ===== الاختبار ===== */
+.option-row{
+  display:flex;align-items:center;gap:.7rem;
+  padding:.7rem .9rem;border:1.5px solid var(--line);border-radius:10px;
+  cursor:pointer; background:#fff;
+}
+.option-row:has(input:checked){border-color:var(--gold); background:#fbf3e5}
+.result-correct{background:#eaf5ec;border-color:var(--success) !important}
+.result-wrong{background:#fbeae7;border-color:var(--danger) !important}
+
+/* ===== تبويبات لوحة التحكم ===== */
+.tab-btn{
+  padding:.6rem 1.1rem;border-radius:10px 10px 0 0;font-weight:700;
+  border:none;background:transparent;color:var(--paper);opacity:.65;cursor:pointer;
+}
+.tab-btn.active{background:var(--paper);color:var(--ink);opacity:1}
+
+/* سكرول بار خفيف */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-thumb{background:var(--gold-light);border-radius:99px}
+
+.skeleton{background:linear-gradient(90deg,#eee,#f6f6f6,#eee); background-size:200% 100%; animation:sk 1.2s infinite}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media (max-width:640px){
+  .stage-num{font-size:1.9rem}
+}
