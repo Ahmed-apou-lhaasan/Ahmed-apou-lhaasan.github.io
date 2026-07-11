@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الدرس | منصة الأستاذ أحمد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+<div id="app-header"></div>
+
+<main class="max-w-3xl mx-auto px-4 py-8">
+  <a id="backLink" href="/index.html" class="text-sm" style="color:var(--gold)">→ الرجوع للقسم</a>
+  <h1 id="lessonTitle" class="display text-3xl my-4">جاري التحميل...</h1>
+  <div id="lessonBody" class="leading-loose text-lg"></div>
+</main>
+
+<div id="app-footer"></div>
+
+<script type="module">
+  import { mountLayout, escapeHtml } from "/assets/js/main.js";
+  import { db, doc, getDoc } from "/assets/js/firebase-config.js";
+
+  mountLayout();
+
+  const id = new URLSearchParams(location.search).get("id");
+  const titleEl = document.getElementById("lessonTitle");
+  const bodyEl = document.getElementById("lessonBody");
+
+  function youtubeEmbed(url) {
+    try {
+      const u = new URL(url);
+      let vid = u.searchParams.get("v");
+      if (u.hostname.includes("youtu.be")) vid = u.pathname.slice(1);
+      if (!vid) return null;
+      return `https://www.youtube.com/embed/${vid}`;
+    } catch { return null; }
+  }
+
+  async function load() {
+    if (!id) { titleEl.textContent = "لم يتم تحديد الدرس"; return; }
+    try {
+      const snap = await getDoc(doc(db, "lessons", id));
+      if (!snap.exists()) { titleEl.textContent = "الدرس غير موجود"; return; }
+      const d = snap.data();
+      document.getElementById("backLink").href = `/grade.html?grade=${d.grade}`;
+      titleEl.textContent = d.title || "درس";
+
+      if (d.type === "video") {
+        const embed = youtubeEmbed(d.content);
+        bodyEl.innerHTML = embed
+          ? `<div class="rounded-xl overflow-hidden shadow-lg" style="aspect-ratio:16/9">
+               <iframe class="w-full h-full" src="${embed}" allowfullscreen></iframe>
+             </div>`
+          : `<a class="btn btn-primary" href="${escapeHtml(d.content)}" target="_blank">مشاهدة الفيديو</a>`;
+      } else if (d.type === "pdf") {
+        bodyEl.innerHTML = `
+          <a class="btn btn-gold mb-4" href="${escapeHtml(d.content)}" target="_blank">📄 فتح / تحميل ملف PDF</a>
+          <div class="rounded-xl overflow-hidden border" style="border-color:var(--line); height:75vh">
+            <iframe class="w-full h-full" src="${escapeHtml(d.content)}"></iframe>
+          </div>`;
+      } else {
+        bodyEl.innerHTML = `<div class="whitespace-pre-wrap">${escapeHtml(d.content || "")}</div>`;
+      }
+    } catch (e) {
+      titleEl.textContent = "حدث خطأ في التحميل";
+      console.error(e);
+    }
+  }
+  load();
+</script>
+</body>
+</html>
