@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دخول لوحة التحكم | الأستاذ أحمد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm p-8 rounded-2xl" style="background:#fff; box-shadow:var(--shadow); border:1px solid var(--line)">
+    <div class="text-center mb-6">
+      <span class="brand-mark mx-auto mb-3" style="display:flex">أ</span>
+      <h1 class="display text-2xl">لوحة تحكم المعلم</h1>
+      <p class="text-sm opacity-60">هذه الصفحة خاصة بالأستاذ أحمد فقط</p>
+    </div>
+    <form id="loginForm" class="flex flex-col gap-4">
+      <div>
+        <label class="field-label">البريد الإلكتروني</label>
+        <input id="email" type="email" required class="field" placeholder="teacher@example.com">
+      </div>
+      <div>
+        <label class="field-label">كلمة المرور</label>
+        <input id="password" type="password" required class="field" placeholder="••••••••">
+      </div>
+      <p id="errorMsg" class="hidden text-sm" style="color:var(--danger)"></p>
+      <button type="submit" class="btn btn-primary w-full">تسجيل الدخول</button>
+    </form>
+  </div>
+
+<script type="module">
+  import { auth, signInWithEmailAndPassword, onAuthStateChanged } from "/assets/js/firebase-config.js";
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) location.href = "/admin/dashboard.html";
+  });
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorMsg");
+    errorMsg.classList.add("hidden");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      location.href = "/admin/dashboard.html";
+    } catch (err) {
+      errorMsg.textContent = "بيانات الدخول غير صحيحة، حاول مرة أخرى";
+      errorMsg.classList.remove("hidden");
+    }
+  });
+</script>
+</body>
+</html>
