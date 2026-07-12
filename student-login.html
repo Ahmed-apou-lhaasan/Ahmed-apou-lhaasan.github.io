@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دخول الطالب | منصة الأستاذ أحمد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm p-8 rounded-2xl" style="background:#fff; box-shadow:var(--shadow); border:1px solid var(--line)">
+    <div class="text-center mb-6">
+      <span class="brand-mark mx-auto mb-3" style="display:flex">أ</span>
+      <h1 class="display text-2xl">دخول الطالب</h1>
+      <p class="text-sm opacity-60">اختر مرحلتك واسمك واكتب الكود اللي معاك</p>
+    </div>
+    <form id="loginForm" class="flex flex-col gap-4">
+      <div>
+        <label class="field-label">المرحلة</label>
+        <select id="grade" class="field" required>
+          <option value="">اختر المرحلة</option>
+          <option value="1">الأول الإعدادي</option>
+          <option value="2">الثاني الإعدادي</option>
+          <option value="3">الثالث الإعدادي</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">اسمك</label>
+        <select id="studentSelect" class="field" required disabled>
+          <option value="">اختر المرحلة أولاً</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">الكود السري</label>
+        <input id="code" class="field" inputmode="numeric" placeholder="مثال: 4821" required>
+      </div>
+      <p id="errorMsg" class="hidden text-sm" style="color:var(--danger)"></p>
+      <button type="submit" class="btn btn-primary w-full">دخول</button>
+    </form>
+  </div>
+
+<script type="module">
+  import { db, collection, getDocs, query, where } from "/assets/js/firebase-config.js";
+  import { setStudentSession, escapeHtml } from "/assets/js/main.js";
+
+  const gradeSel = document.getElementById("grade");
+  const studentSel = document.getElementById("studentSelect");
+  const errorMsg = document.getElementById("errorMsg");
+  let studentsCache = [];
+
+  gradeSel.addEventListener("change", async () => {
+    studentSel.innerHTML = `<option value="">جاري التحميل...</option>`;
+    studentSel.disabled = true;
+    if (!gradeSel.value) {
+      studentSel.innerHTML = `<option value="">اختر المرحلة أولاً</option>`;
+      return;
+    }
+    try {
+      const q = query(collection(db, "students"), where("grade", "==", gradeSel.value));
+      const snap = await getDocs(q);
+      studentsCache = [];
+      snap.forEach(docu => studentsCache.push({ id: docu.id, ...docu.data() }));
+      studentsCache.sort((a, b) => (a.name || "").localeCompare(b.name || "", "ar"));
+      if (studentsCache.length === 0) {
+        studentSel.innerHTML = `<option value="">لا يوجد طلاب مسجلين في هذه المرحلة</option>`;
+        studentSel.disabled = true;
+        return;
+      }
+      studentSel.innerHTML = `<option value="">اختر اسمك</option>` +
+        studentsCache.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+      studentSel.disabled = false;
+    } catch (e) {
+      studentSel.innerHTML = `<option value="">تعذر تحميل الأسماء</option>`;
+      console.error(e);
+    }
+  });
+
+  document.getElementById("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    errorMsg.classList.add("hidden");
+    const chosen = studentsCache.find(s => s.id === studentSel.value);
+    const code = document.getElementById("code").value.trim();
+    if (!chosen) {
+      errorMsg.textContent = "اختر اسمك من القائمة";
+      errorMsg.classList.remove("hidden");
+      return;
+    }
+    if (String(chosen.code || "") !== code) {
+      errorMsg.textContent = "الكود السري غير صحيح";
+      errorMsg.classList.remove("hidden");
+      return;
+    }
+    setStudentSession({ id: chosen.id, name: chosen.name, grade: chosen.grade });
+    location.href = `/grade.html?grade=${chosen.grade}`;
+  });
+</script>
+</body>
+</html>
