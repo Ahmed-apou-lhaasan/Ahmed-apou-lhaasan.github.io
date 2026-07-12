@@ -348,9 +348,44 @@ async function loadAttendanceHistory() {
   });
 }
 
+/* =====================================================================
+   نتائج الطلاب
+   ===================================================================== */
+const resultsGradeFilter = document.getElementById("results_grade_filter");
+const resultsAdminList = document.getElementById("resultsAdminList");
+
+async function loadAllResultsAdmin() {
+  resultsAdminList.innerHTML = `<div class="item-card skeleton h-14"></div>`;
+  const snap = await getDocs(collection(db, "examResults"));
+  if (snap.empty) { resultsAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد نتائج بعد.</p>`; return; }
+  let rows = [];
+  snap.forEach(docu => rows.push(docu.data()));
+  if (resultsGradeFilter.value) {
+    rows = rows.filter(r => r.grade === resultsGradeFilter.value);
+  }
+  if (rows.length === 0) { resultsAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد نتائج لهذه المرحلة.</p>`; return; }
+  rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  resultsAdminList.innerHTML = "";
+  rows.forEach(r => {
+    const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
+    const date = r.createdAt ? new Date(r.createdAt).toLocaleString("ar-EG") : "";
+    resultsAdminList.insertAdjacentHTML("beforeend", `
+      <div class="item-card">
+        <div class="flex-1">
+          <div class="font-bold">${escapeHtml(r.studentName || "طالب")} — ${escapeHtml(r.examTitle || "امتحان")}</div>
+          <div class="text-xs opacity-60">${GRADE_LABELS[r.grade] || r.grade} · ${date}</div>
+        </div>
+        <span class="badge badge-exam">${r.score} / ${r.total} (${pct}%)</span>
+      </div>`);
+  });
+}
+
+resultsGradeFilter.addEventListener("change", loadAllResultsAdmin);
+
 /* ============== تشغيل أولي ============== */
 loadLessonsAdmin();
 loadExamsAdmin();
 loadStudentsAdmin();
 loadAttendanceRoster();
 loadAttendanceHistory();
+loadAllResultsAdmin();
