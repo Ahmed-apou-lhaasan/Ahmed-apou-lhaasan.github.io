@@ -248,7 +248,13 @@ const studentForm = document.getElementById("studentForm");
 const studentsAdminList = document.getElementById("studentsAdminList");
 
 async function loadStudentsAdmin() {
-  studentsAdminList.insertAdjacentHTML("beforeend", `
+  studentsAdminList.innerHTML = `<div class="item-card skeleton h-14"></div>`;
+  const snap = await getDocs(collection(db, "students"));
+  if (snap.empty) { studentsAdminList.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب مسجلون بعد.</p>`; return; }
+  studentsAdminList.innerHTML = "";
+  snap.forEach(docu => {
+    const d = docu.data();
+    studentsAdminList.insertAdjacentHTML("beforeend", `
       <div class="item-card">
         <div class="flex-1">
           <div class="font-bold">${escapeHtml(d.name)}</div>
