@@ -171,6 +171,22 @@
       <h2 class="font-bold text-lg mb-3">سجل الغياب السابق</h2>
       <div id="attendanceHistory" class="flex flex-col gap-2"></div>
     </div>
+
+    <div class="p-5 rounded-2xl" style="background:#fdf3e7;border:1px solid var(--gold-light)">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h2 class="font-bold text-lg">⚠️ تنبيهات الغياب المتكرر</h2>
+        <div class="flex items-center gap-2">
+          <label class="text-sm" style="color:var(--ink-2)">الحد الأدنى للتنبيه:</label>
+          <select id="absence_threshold" class="field" style="width:auto;padding:.4rem .7rem">
+            <option value="2">2 مرات</option>
+            <option value="3" selected>3 مرات</option>
+            <option value="4">4 مرات</option>
+            <option value="5">5 مرات</option>
+          </select>
+        </div>
+      </div>
+      <div id="absenceAlertsList" class="flex flex-col gap-2"></div>
+    </div>
   </section>
 
   <!-- ===================== تبويب النتائج ===================== -->
