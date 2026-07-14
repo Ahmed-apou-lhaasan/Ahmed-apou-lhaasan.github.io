@@ -326,8 +326,8 @@ document.getElementById("saveAttendanceBtn").addEventListener("click", async () 
   document.getElementById("attendanceSavedMsg").classList.remove("hidden");
   setTimeout(() => document.getElementById("attendanceSavedMsg").classList.add("hidden"), 2500);
   loadAttendanceHistory();
+  loadAbsenceAlerts();
 });
-
 async function loadAttendanceHistory() {
   const box = document.getElementById("attendanceHistory");
   box.innerHTML = `<div class="item-card skeleton h-12"></div>`;
