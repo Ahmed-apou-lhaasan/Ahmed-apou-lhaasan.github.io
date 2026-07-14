@@ -382,6 +382,57 @@ async function loadAllResultsAdmin() {
 
 resultsGradeFilter.addEventListener("change", loadAllResultsAdmin);
 
+/* =====================================================================
+   تنبيهات الغياب المتكرر
+   ===================================================================== */
+const absenceThresholdSel = document.getElementById("absence_threshold");
+const absenceAlertsList = document.getElementById("absenceAlertsList");
+
+async function loadAbsenceAlerts() {
+  absenceAlertsList.innerHTML = `<div class="item-card skeleton h-12"></div>`;
+  const [attSnap, studentsSnap] = await Promise.all([
+    getDocs(collection(db, "attendance")),
+    getDocs(collection(db, "students"))
+  ]);
+
+  const studentsMap = {};
+  studentsSnap.forEach(docu => { studentsMap[docu.id] = docu.data(); });
+
+  const counts = {};
+  attSnap.forEach(docu => {
+    const d = docu.data();
+    (d.absentStudentIds || []).forEach(sid => {
+      counts[sid] = (counts[sid] || 0) + 1;
+    });
+  });
+
+  const threshold = Number(absenceThresholdSel.value);
+  const rows = Object.entries(counts)
+    .filter(([sid, count]) => count >= threshold && studentsMap[sid])
+    .map(([sid, count]) => ({ sid, count, ...studentsMap[sid] }))
+    .sort((a, b) => b.count - a.count);
+
+  if (rows.length === 0) {
+    absenceAlertsList.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب تخطوا هذا الحد من الغياب حالياً.</p>`;
+    return;
+  }
+
+  absenceAlertsList.innerHTML = "";
+  rows.forEach(r => {
+    absenceAlertsList.insertAdjacentHTML("beforeend", `
+      <div class="item-card">
+        <span class="text-2xl">⚠️</span>
+        <div class="flex-1">
+          <div class="font-bold">${escapeHtml(r.name)}</div>
+          <div class="text-xs opacity-60">${GRADE_LABELS[r.grade] || r.grade}</div>
+        </div>
+        <span class="badge" style="background:#fbeae7;color:var(--danger)">${r.count} غياب</span>
+      </div>`);
+  });
+}
+
+absenceThresholdSel.addEventListener("change", loadAbsenceAlerts);
+
 /* ============== تشغيل أولي ============== */
 loadLessonsAdmin();
 loadExamsAdmin();
@@ -389,3 +440,4 @@ loadStudentsAdmin();
 loadAttendanceRoster();
 loadAttendanceHistory();
 loadAllResultsAdmin();
+loadAbsenceAlerts();
