@@ -38,7 +38,7 @@
 
 <script type="module">
   import { mountLayout, escapeHtml, getStudentSession } from "/assets/js/main.js";
-  import { db, doc, getDoc, collection, addDoc } from "/assets/js/firebase-config.js";
+  import { db, doc, getDoc, collection, addDoc, getDocs, query, where } from "/assets/js/firebase-config.js";
 
   mountLayout();
 
@@ -49,6 +49,18 @@
   const session = getStudentSession();
   let examData = null;
 
+  async function checkAlreadyTaken() {
+    if (!session) return null;
+    const q = query(collection(db, "examResults"), where("studentId", "==", session.id));
+    const snap = await getDocs(q);
+    let found = null;
+    snap.forEach(docu => {
+      const d = docu.data();
+      if (d.examId === id) found = d;
+    });
+    return found;
+  }
+
   async function load() {
     if (!id) { titleEl.textContent = "لم يتم تحديد الامتحان"; return; }
     try {
@@ -57,6 +69,20 @@
       examData = snap.data();
       document.getElementById("backLink").href = `/grade.html?grade=${examData.grade}`;
       titleEl.textContent = examData.title || "امتحان";
+
+      const previous = await checkAlreadyTaken();
+      if (previous) {
+        const pct = previous.total ? Math.round((previous.score / previous.total) * 100) : 0;
+        document.getElementById("nameGate").innerHTML =
+          `<p class="text-sm" style="color:var(--ink-2)">
+             لقد حللت هذا الامتحان من قبل. نتيجتك كانت:
+           </p>`;
+        document.getElementById("nameGate").classList.remove("hidden");
+        document.getElementById("resultBox").classList.remove("hidden");
+        document.getElementById("scoreText").textContent = `${previous.score} / ${previous.total} (${pct}%)`;
+        return;
+      }
+
       if (session) {
         document.getElementById("nameGate").innerHTML =
           `<p class="text-sm" style="color:var(--ink-2)">مسجل دخول باسم: <span class="font-bold">${escapeHtml(session.name)}</span></p>`;
