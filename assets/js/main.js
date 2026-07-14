@@ -49,6 +49,7 @@ export function renderFooter() {
   <footer class="mt-16 border-t" style="border-color:var(--line)">
     <div class="max-w-6xl mx-auto px-4 py-8 text-center text-sm" style="color:var(--ink-2)">
       <div class="font-bold mb-1">أ / أحمد أبوالحسن — معلم لغة عربية</div>
+      <div class="opacity-70 mb-1">للتواصل: 01029307604</div>
       <div class="opacity-70">جميع الحقوق محفوظة © ${year}</div>
       <a href="/admin/login.html" class="opacity-40 hover:opacity-80 text-xs">لوحة التحكم</a>
       ${studentLinks}
