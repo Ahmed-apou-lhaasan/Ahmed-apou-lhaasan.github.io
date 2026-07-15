@@ -188,7 +188,56 @@
       <div id="absenceAlertsList" class="flex flex-col gap-2"></div>
     </div>
   </section>
+<!-- ===================== تبويب الواجبات ===================== -->
+  <section id="tab-homework" class="tab-panel hidden flex-col gap-8">
+    <div class="p-5 rounded-2xl" style="background:#fff;border:1px solid var(--line)">
+      <h2 class="font-bold text-lg mb-4">إضافة / تعديل واجب</h2>
+      <form id="homeworkForm" class="grid sm:grid-cols-2 gap-4">
+        <input type="hidden" id="hw_id">
+        <div class="sm:col-span-2">
+          <label class="field-label">عنوان الواجب</label>
+          <input id="hw_title" required class="field">
+        </div>
+        <div>
+          <label class="field-label">القسم / المرحلة</label>
+          <select id="hw_grade" class="field">
+            <option value="1">الأول الإعدادي</option>
+            <option value="2">الثاني الإعدادي</option>
+            <option value="3">الثالث الإعدادي</option>
+            <option value="grammar">النحو والبلاغة</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">آخر موعد للتسليم (اختياري)</label>
+          <input id="hw_due" type="date" class="field">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="field-label">نص الواجب</label>
+          <textarea id="hw_content" rows="4" required class="field"></textarea>
+        </div>
+        <div class="sm:col-span-2 flex gap-3">
+          <button type="submit" class="btn btn-primary">حفظ الواجب</button>
+          <button type="button" id="hwCancelEdit" class="btn btn-outline hidden">إلغاء التعديل</button>
+        </div>
+      </form>
+    </div>
 
+    <div>
+      <h2 class="font-bold text-lg mb-3">الواجبات الحالية</h2>
+      <div id="homeworkAdminList" class="flex flex-col gap-2"></div>
+    </div>
+
+    <div id="hwSubmissionPanel" class="hidden p-5 rounded-2xl" style="background:#fdf3e7;border:1px solid var(--gold-light)">
+      <h2 class="font-bold text-lg mb-1">تسجيل تسليم الواجب:</h2>
+      <p id="hwSubmissionTitle" class="text-sm mb-4" style="color:var(--ink-2)"></p>
+      <div id="homeworkStudentList" class="flex flex-col gap-2 mb-4"></div>
+      <div class="flex gap-3">
+        <button id="saveHomeworkSubmissionBtn" class="btn btn-primary">حفظ التسليم</button>
+        <button id="closeHwSubmissionPanel" class="btn btn-outline">إغلاق</button>
+      </div>
+      <p id="homeworkSavedMsg" class="hidden text-sm mt-2" style="color:var(--success)">تم الحفظ بنجاح ✔</p>
+    </div>
+  </section>
   <!-- ===================== تبويب النتائج ===================== -->
   <section id="tab-results" class="tab-panel hidden flex-col gap-4">
     <div class="p-5 rounded-2xl" style="background:#fff;border:1px solid var(--line)">
