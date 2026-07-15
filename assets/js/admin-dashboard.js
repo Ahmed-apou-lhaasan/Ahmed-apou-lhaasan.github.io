@@ -240,7 +240,126 @@ examForm.addEventListener("submit", async (e) => {
   document.getElementById("examCancelEdit").classList.add("hidden");
   loadExamsAdmin();
 });
+/* =====================================================================
+   الواجبات
+   ===================================================================== */
+const homeworkForm = document.getElementById("homeworkForm");
+const homeworkAdminList = document.getElementById("homeworkAdminList");
+let currentHwSubmissionId = null;
 
+async function loadHomeworkAdmin() {
+  homeworkAdminList.innerHTML = `<div class="item-card skeleton h-14"></div>`;
+  const snap = await getDocs(collection(db, "homework"));
+  if (snap.empty) { homeworkAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد واجبات بعد.</p>`; return; }
+  homeworkAdminList.innerHTML = "";
+  snap.forEach(docu => {
+    const d = docu.data();
+    homeworkAdminList.insertAdjacentHTML("beforeend", `
+      <div class="item-card">
+        <div class="flex-1">
+          <div class="font-bold">${escapeHtml(d.title)}</div>
+          <div class="text-xs opacity-60">${GRADE_LABELS[d.grade] || d.grade} · تم التسليم: ${(d.submittedStudentIds || []).length}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" data-track="${docu.id}">تسجيل التسليم</button>
+        <button class="btn btn-outline btn-sm" data-edit="${docu.id}">تعديل</button>
+        <button class="btn btn-danger btn-sm" data-del="${docu.id}">حذف</button>
+      </div>`);
+  });
+  homeworkAdminList.querySelectorAll("[data-track]").forEach(b => b.addEventListener("click", () => openHwSubmissionPanel(b.dataset.track)));
+  homeworkAdminList.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", () => editHomework(b.dataset.edit)));
+  homeworkAdminList.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => delHomework(b.dataset.del)));
+}
+
+async function editHomework(id) {
+  const snap = await getDoc(doc(db, "homework", id));
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById("hw_id").value = id;
+  document.getElementById("hw_title").value = d.title || "";
+  document.getElementById("hw_grade").value = d.grade || "1";
+  document.getElementById("hw_due").value = d.dueDate || "";
+  document.getElementById("hw_content").value = d.content || "";
+  document.getElementById("hwCancelEdit").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function delHomework(id) {
+  if (!confirm("هل تريد حذف هذا الواجب نهائياً؟")) return;
+  await deleteDoc(doc(db, "homework", id));
+  loadHomeworkAdmin();
+}
+
+document.getElementById("hwCancelEdit").addEventListener("click", () => {
+  homeworkForm.reset();
+  document.getElementById("hw_id").value = "";
+  document.getElementById("hwCancelEdit").classList.add("hidden");
+});
+
+homeworkForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("hw_id").value;
+  const payload = {
+    title: document.getElementById("hw_title").value.trim(),
+    grade: document.getElementById("hw_grade").value,
+    dueDate: document.getElementById("hw_due").value || null,
+    content: document.getElementById("hw_content").value.trim(),
+    updatedAt: Date.now()
+  };
+  if (id) {
+    await updateDoc(doc(db, "homework", id), payload);
+  } else {
+    payload.createdAt = Date.now();
+    payload.submittedStudentIds = [];
+    await addDoc(collection(db, "homework"), payload);
+  }
+  homeworkForm.reset();
+  document.getElementById("hw_id").value = "";
+  document.getElementById("hwCancelEdit").classList.add("hidden");
+  loadHomeworkAdmin();
+});
+
+async function openHwSubmissionPanel(id) {
+  currentHwSubmissionId = id;
+  const snap = await getDoc(doc(db, "homework", id));
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById("hwSubmissionTitle").textContent = `${d.title} — ${GRADE_LABELS[d.grade] || d.grade}`;
+  document.getElementById("hwSubmissionPanel").classList.remove("hidden");
+  const listEl = document.getElementById("homeworkStudentList");
+  listEl.innerHTML = `<div class="item-card skeleton h-12"></div>`;
+  const studentsSnap = await getDocs(query(collection(db, "students"), where("grade", "==", d.grade)));
+  if (studentsSnap.empty) {
+    listEl.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب في هذه المرحلة.</p>`;
+    return;
+  }
+  const submittedIds = d.submittedStudentIds || [];
+  listEl.innerHTML = "";
+  studentsSnap.forEach(docu => {
+    const sd = docu.data();
+    const checked = submittedIds.includes(docu.id) ? "checked" : "";
+    listEl.insertAdjacentHTML("beforeend", `
+      <label class="option-row">
+        <input type="checkbox" class="hw-check" value="${docu.id}" ${checked}>
+        <span>${escapeHtml(sd.name)}</span>
+        <span class="text-xs opacity-50">(علّم عند التسليم)</span>
+      </label>`);
+  });
+  document.getElementById("hwSubmissionPanel").scrollIntoView({ behavior: "smooth" });
+}
+
+document.getElementById("closeHwSubmissionPanel").addEventListener("click", () => {
+  document.getElementById("hwSubmissionPanel").classList.add("hidden");
+  currentHwSubmissionId = null;
+});
+
+document.getElementById("saveHomeworkSubmissionBtn").addEventListener("click", async () => {
+  if (!currentHwSubmissionId) return;
+  const submittedIds = [...document.querySelectorAll(".hw-check:checked")].map(c => c.value);
+  await updateDoc(doc(db, "homework", currentHwSubmissionId), { submittedStudentIds: submittedIds });
+  document.getElementById("homeworkSavedMsg").classList.remove("hidden");
+  setTimeout(() => document.getElementById("homeworkSavedMsg").classList.add("hidden"), 2500);
+  loadHomeworkAdmin();
+});
 /* =====================================================================
    الطلاب
    ===================================================================== */
@@ -441,3 +560,6 @@ loadAttendanceRoster();
 loadAttendanceHistory();
 loadAllResultsAdmin();
 loadAbsenceAlerts();
+loadPaymentRoster();
+loadPaymentHistory();
+loadHomeworkAdmin();
