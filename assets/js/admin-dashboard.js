@@ -552,6 +552,76 @@ async function loadAbsenceAlerts() {
 
 absenceThresholdSel.addEventListener("change", loadAbsenceAlerts);
 
+/* =====================================================================
+   المصروفات
+   ===================================================================== */
+const payGradeSel = document.getElementById("pay_grade");
+const payMonthInput = document.getElementById("pay_month");
+const paymentStudentList = document.getElementById("paymentStudentList");
+payMonthInput.value = new Date().toISOString().slice(0, 7);
+
+async function loadPaymentRoster() {
+  paymentStudentList.innerHTML = `<div class="item-card skeleton h-12"></div>`;
+  const key = `${payGradeSel.value}_${payMonthInput.value}`;
+  const [studentsSnap, paySnap] = await Promise.all([
+    getDocs(query(collection(db, "students"), where("grade", "==", payGradeSel.value))),
+    getDoc(doc(db, "payments", key))
+  ]);
+  if (studentsSnap.empty) {
+    paymentStudentList.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب في هذه المرحلة، أضفهم من تبويب الطلاب.</p>`;
+    return;
+  }
+  const paidIds = paySnap.exists() ? (paySnap.data().paidStudentIds || []) : [];
+  paymentStudentList.innerHTML = "";
+  studentsSnap.forEach(docu => {
+    const d = docu.data();
+    const checked = paidIds.includes(docu.id) ? "checked" : "";
+    paymentStudentList.insertAdjacentHTML("beforeend", `
+      <label class="option-row">
+        <input type="checkbox" class="pay-check" value="${docu.id}" ${checked}>
+        <span>${escapeHtml(d.name)}</span>
+        <span class="text-xs opacity-50">(علّم عند الدفع)</span>
+      </label>`);
+  });
+}
+
+payGradeSel.addEventListener("change", loadPaymentRoster);
+payMonthInput.addEventListener("change", loadPaymentRoster);
+
+document.getElementById("savePaymentBtn").addEventListener("click", async () => {
+  const paidIds = [...document.querySelectorAll(".pay-check:checked")].map(c => c.value);
+  const key = `${payGradeSel.value}_${payMonthInput.value}`;
+  await setDoc(doc(db, "payments", key), {
+    grade: payGradeSel.value,
+    month: payMonthInput.value,
+    paidStudentIds: paidIds,
+    updatedAt: Date.now()
+  });
+  document.getElementById("paymentSavedMsg").classList.remove("hidden");
+  setTimeout(() => document.getElementById("paymentSavedMsg").classList.add("hidden"), 2500);
+  loadPaymentHistory();
+});
+
+async function loadPaymentHistory() {
+  const box = document.getElementById("paymentHistory");
+  box.innerHTML = `<div class="item-card skeleton h-12"></div>`;
+  const snap = await getDocs(collection(db, "payments"));
+  if (snap.empty) { box.innerHTML = `<p class="text-sm opacity-60">لا يوجد سجل مصروفات بعد.</p>`; return; }
+  const rows = [];
+  snap.forEach(docu => rows.push(docu.data()));
+  rows.sort((a, b) => (b.month || "").localeCompare(a.month || ""));
+  box.innerHTML = "";
+  rows.slice(0, 20).forEach(d => {
+    box.insertAdjacentHTML("beforeend", `
+      <div class="item-card">
+        <div class="flex-1">
+          <div class="font-bold">${d.month} — ${GRADE_LABELS[d.grade] || d.grade}</div>
+          <div class="text-xs opacity-60">عدد الدافعين: ${(d.paidStudentIds || []).length}</div>
+        </div>
+      </div>`);
+  });
+}
+
 /* ============== تشغيل أولي ============== */
 loadLessonsAdmin();
 loadExamsAdmin();
