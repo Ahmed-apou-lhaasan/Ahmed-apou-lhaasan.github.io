@@ -573,6 +573,8 @@ async function loadPaymentRoster() {
   }
   const paidIds = paySnap.exists() ? (paySnap.data().paidStudentIds || []) : [];
   paymentStudentList.innerHTML = "";
+  const unpaidBox = document.getElementById("unpaidAlertsList");
+  const unpaidRows = [];
   studentsSnap.forEach(docu => {
     const d = docu.data();
     const checked = paidIds.includes(docu.id) ? "checked" : "";
@@ -582,9 +584,24 @@ async function loadPaymentRoster() {
         <span>${escapeHtml(d.name)}</span>
         <span class="text-xs opacity-50">(علّم عند الدفع)</span>
       </label>`);
+    if (!paidIds.includes(docu.id)) unpaidRows.push(d);
   });
+  if (unpaidRows.length === 0) {
+    unpaidBox.innerHTML = `<p class="text-sm opacity-60">كل الطلاب دفعوا هذا الشهر 🎉</p>`;
+  } else {
+    unpaidBox.innerHTML = "";
+    unpaidRows.forEach(d => {
+      unpaidBox.insertAdjacentHTML("beforeend", `
+        <div class="item-card">
+          <span class="text-2xl">⚠️</span>
+          <div class="flex-1">
+            <div class="font-bold">${escapeHtml(d.name)}</div>
+          </div>
+          <span class="badge" style="background:#fbeae7;color:var(--danger)">لم يدفع</span>
+        </div>`);
+    });
+  }
 }
-
 payGradeSel.addEventListener("change", loadPaymentRoster);
 payMonthInput.addEventListener("change", loadPaymentRoster);
 
