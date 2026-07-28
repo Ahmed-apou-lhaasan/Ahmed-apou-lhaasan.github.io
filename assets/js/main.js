@@ -7,6 +7,14 @@ export const GRADE_LABELS = {
 };
 
 export function renderHeader(activeGrade = "") {
+  const student = getStudentSession();
+  const navLinks = student
+    ? `<a href="/grade.html?grade=${student.grade}" class="nav-link">${GRADE_LABELS[student.grade] || "قسمي"}</a>`
+    : `
+        <a href="/grade.html?grade=1" class="nav-link">الأول الإعدادي</a>
+        <a href="/grade.html?grade=2" class="nav-link">الثاني الإعدادي</a>
+        <a href="/grade.html?grade=3" class="nav-link">الثالث الإعدادي</a>
+        <a href="/grade.html?grade=grammar" class="nav-link">النحو والبلاغة</a>`;
   return `
   <header class="site-header">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
@@ -18,18 +26,12 @@ export function renderHeader(activeGrade = "") {
         </div>
       </a>
       <nav class="hidden sm:flex items-center gap-1">
-        <a href="/grade.html?grade=1" class="nav-link">الأول الإعدادي</a>
-        <a href="/grade.html?grade=2" class="nav-link">الثاني الإعدادي</a>
-        <a href="/grade.html?grade=3" class="nav-link">الثالث الإعدادي</a>
-        <a href="/grade.html?grade=grammar" class="nav-link">النحو والبلاغة</a>
+        ${navLinks}
       </nav>
       <button id="menuBtn" class="sm:hidden nav-link" aria-label="القائمة">☰</button>
     </div>
     <nav id="mobileMenu" class="sm:hidden hidden flex-col px-4 pb-3 gap-1">
-      <a href="/grade.html?grade=1" class="nav-link block">الأول الإعدادي</a>
-      <a href="/grade.html?grade=2" class="nav-link block">الثاني الإعدادي</a>
-      <a href="/grade.html?grade=3" class="nav-link block">الثالث الإعدادي</a>
-      <a href="/grade.html?grade=grammar" class="nav-link block">النحو والبلاغة</a>
+      ${navLinks.replace(/nav-link"/g, 'nav-link block"')}
     </nav>
     <div class="ornament-divider"></div>
   </header>`;
