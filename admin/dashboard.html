@@ -102,8 +102,24 @@
           </div>
         </div>
 
+        <div class="p-4 rounded-xl" style="background:var(--paper-2)">
+          <label class="field-label">⚡ استيراد أسئلة دفعة واحدة (اختياري - يوفر وقت كبير)</label>
+          <p class="text-xs mb-2" style="color:var(--ink-2)">
+            اكتب السؤال، وتحته الاختيارات كل واحد في سطر، وحط علامة * قبل الإجابة الصحيحة بس، وافصل بين كل سؤال والتاني بسطر فاضي. مثال:<br>
+            ما جمع كلمة "قلم"؟<br>
+            كتب<br>
+            *أقلام<br>
+            مدارس<br><br>
+            الفعل اللازم يحتاج مفعولاً به<br>
+            خطأ<br>
+            *صح
+          </p>
+          <textarea id="bulk_import_text" rows="6" class="field" placeholder="الصق كل الأسئلة هنا دفعة واحدة..."></textarea>
+          <button type="button" id="importQuestionsBtn" class="btn btn-gold btn-sm mt-2">⚡ استيراد الأسئلة الآن</button>
+        </div>
+
         <div id="questionsBuilder" class="flex flex-col gap-4"></div>
-        <button type="button" id="addQuestionBtn" class="btn btn-outline self-start">+ إضافة سؤال</button>
+        <button type="button" id="addQuestionBtn" class="btn btn-outline self-start">+ إضافة سؤال يدوياً</button>
 
         <div class="flex gap-3">
           <button type="submit" class="btn btn-primary">حفظ الامتحان</button>
