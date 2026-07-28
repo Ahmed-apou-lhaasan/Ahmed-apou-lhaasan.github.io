@@ -155,6 +155,35 @@ function addQuestionRow(qData = null) {
 
 document.getElementById("addQuestionBtn").addEventListener("click", () => addQuestionRow());
 
+document.getElementById("importQuestionsBtn").addEventListener("click", () => {
+  const raw = document.getElementById("bulk_import_text").value;
+  const blocks = raw.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+  let imported = 0;
+  blocks.forEach(block => {
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length < 3) return;
+    const questionText = lines[0];
+    const options = [];
+    let correctIndex = 0;
+    lines.slice(1).forEach((line, i) => {
+      if (line.startsWith("*")) {
+        correctIndex = i;
+        options.push(line.slice(1).trim());
+      } else {
+        options.push(line);
+      }
+    });
+    addQuestionRow({ text: questionText, type: "mcq", options, correctIndex });
+    imported++;
+  });
+  if (imported > 0) {
+    document.getElementById("bulk_import_text").value = "";
+    alert(`تم استيراد ${imported} سؤال بنجاح ✔ راجعهم تحت قبل الحفظ.`);
+  } else {
+    alert("لم يتم التعرف على أي أسئلة، تأكد من التنسيق (سؤال + اختيارات، وسطر فاضي بين كل سؤال والتاني)");
+  }
+});
+
 function collectQuestions() {
   const questions = [];
   questionsBuilder.querySelectorAll("[data-qid]").forEach(wrap => {
