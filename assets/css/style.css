@@ -211,3 +211,22 @@ main{ animation: fadeInUp .5s ease both; }
 .brand-mark:hover{ transform: rotate(-6deg) scale(1.05); }
 
 .site-header{ animation: fadeIn .4s ease both; }
+
+.whatsapp-fab{
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  z-index: 60;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background:#25D366;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow: 0 6px 18px rgba(0,0,0,.3);
+  animation: waPulse 2.2s infinite;
+}
+@keyframes waPulse{
+  0%{ box-shadow: 0 0 0 0 rgba(37,211,102,.55); }
+  70%{ box-shadow: 0 0 0 16px rgba(37,211,102,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+}
