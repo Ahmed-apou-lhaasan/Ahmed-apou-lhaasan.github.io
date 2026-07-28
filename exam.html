@@ -67,6 +67,10 @@
       const snap = await getDoc(doc(db, "exams", id));
       if (!snap.exists()) { titleEl.textContent = "الامتحان غير موجود"; return; }
       examData = snap.data();
+      if (session && session.grade !== examData.grade) {
+        titleEl.textContent = "هذا الامتحان غير متاح لمرحلتك";
+        return;
+      }
       document.getElementById("backLink").href = `/grade.html?grade=${examData.grade}`;
       titleEl.textContent = examData.title || "امتحان";
 
