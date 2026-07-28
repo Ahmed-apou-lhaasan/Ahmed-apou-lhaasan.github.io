@@ -62,6 +62,7 @@
   }
 
   async function load() {
+    if (!session) { location.replace("/student-login.html"); return; }
     if (!id) { titleEl.textContent = "لم يتم تحديد الامتحان"; return; }
     try {
       const snap = await getDoc(doc(db, "exams", id));
