@@ -21,7 +21,7 @@
 <div id="app-footer"></div>
 
 <script type="module">
-  import { mountLayout, escapeHtml } from "/assets/js/main.js";
+  import { mountLayout, escapeHtml, getStudentSession } from "/assets/js/main.js";
   import { db, doc, getDoc } from "/assets/js/firebase-config.js";
 
   mountLayout();
@@ -46,9 +46,13 @@
       const snap = await getDoc(doc(db, "lessons", id));
       if (!snap.exists()) { titleEl.textContent = "الدرس غير موجود"; return; }
       const d = snap.data();
+      const studentSession = getStudentSession();
+      if (studentSession && studentSession.grade !== d.grade) {
+        titleEl.textContent = "هذا الدرس غير متاح لمرحلتك";
+        return;
+      }
       document.getElementById("backLink").href = `/grade.html?grade=${d.grade}`;
       titleEl.textContent = d.title || "درس";
-
       if (d.type === "video") {
         const embed = youtubeEmbed(d.content);
         bodyEl.innerHTML = embed
