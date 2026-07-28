@@ -41,6 +41,7 @@
   }
 
   async function load() {
+    if (!getStudentSession()) { location.replace("/student-login.html"); return; }
     if (!id) { titleEl.textContent = "لم يتم تحديد الدرس"; return; }
     try {
       const snap = await getDoc(doc(db, "lessons", id));
