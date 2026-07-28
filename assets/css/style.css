@@ -169,3 +169,45 @@ label.field-label{font-weight:700;font-size:.9rem;color:var(--ink-2); display:bl
 @media (max-width:640px){
   .stage-num{font-size:1.9rem}
 }
+
+/* ============================================
+   الأنيميشن
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+main{ animation: fadeInUp .5s ease both; }
+
+.stage-card, .item-card{
+  animation: fadeInUp .45s ease both;
+}
+.stage-card:nth-child(2){ animation-delay: .05s }
+.stage-card:nth-child(3){ animation-delay: .1s }
+.stage-card:nth-child(4){ animation-delay: .15s }
+
+.item-card{
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.item-card:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px -12px rgba(31,59,51,.35);
+}
+
+.btn{ transition: transform .15s ease, background-color .2s ease; }
+.btn:active{ transform: scale(.95); }
+
+.option-row{ transition: transform .15s ease, background-color .2s ease, border-color .2s ease; }
+.option-row:active{ transform: scale(.98); }
+
+.tab-panel.flex{ animation: fadeIn .3s ease both; }
+
+.brand-mark{ transition: transform .3s ease; }
+.brand-mark:hover{ transform: rotate(-6deg) scale(1.05); }
+
+.site-header{ animation: fadeIn .4s ease both; }
