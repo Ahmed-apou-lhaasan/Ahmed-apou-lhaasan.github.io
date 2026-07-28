@@ -50,10 +50,12 @@
 
   mountLayout();
 
+  const studentSession = getStudentSession();
+  if (!studentSession) {
+    location.replace("/student-login.html");
+  }
   const params = new URLSearchParams(location.search);
   const grade = params.get("grade") || "1";
-
-  const studentSession = getStudentSession();
   if (studentSession && studentSession.grade !== grade) {
     location.replace(`/grade.html?grade=${studentSession.grade}`);
   }
