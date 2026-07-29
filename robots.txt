@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ahmed-apou-lhaasan.github.io/sitemap.xml
