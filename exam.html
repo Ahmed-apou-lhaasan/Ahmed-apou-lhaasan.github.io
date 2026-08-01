@@ -15,7 +15,7 @@
 <main class="max-w-2xl mx-auto px-4 py-8">
   <a id="backLink" href="/index.html" class="text-sm" style="color:var(--gold)">→ الرجوع للقسم</a>
   <h1 id="examTitle" class="display text-3xl my-4">جاري التحميل...</h1>
-
+  <div id="examTimer" class="hidden mb-4 text-center p-3 rounded-xl font-bold text-lg" style="background:var(--paper-2)"></div>
   <!-- شاشة إدخال اسم الطالب -->
   <div id="nameGate" class="hidden mb-6">
     <label class="field-label">اكتب اسمك قبل بدء الامتحان</label>
@@ -109,13 +109,41 @@
           </fieldset>`);
       });
       submitBtn.classList.remove("hidden");
+      startTimer();
     } catch (e) {
       titleEl.textContent = "حدث خطأ في التحميل";
       console.error(e);
     }
   }
 
-  submitBtn.addEventListener("click", async () => {
+  let timerInterval = null;
+  function startTimer() {
+    if (!examData.duration) return;
+    let remaining = examData.duration * 60;
+    const timerBox = document.getElementById("examTimer");
+    timerBox.classList.remove("hidden");
+    function render() {
+      const m = String(Math.floor(remaining / 60)).padStart(2, "0");
+      const s = String(remaining % 60).padStart(2, "0");
+      timerBox.textContent = `⏱️ الوقت المتبقي: ${m}:${s}`;
+      if (remaining <= 60) timerBox.style.color = "var(--danger)";
+    }
+    render();
+    timerInterval = setInterval(() => {
+      remaining--;
+      render();
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        timerBox.textContent = "⏱️ انتهى الوقت! جاري تسليم إجاباتك...";
+        submitExam();
+      }
+    }, 1000);
+  }
+
+  submitBtn.addEventListener("click", () => submitExam());
+
+  async function submitExam() {
+    if (timerInterval) clearInterval(timerInterval);
     const nameInput = document.getElementById("studentName");
     if (!session && nameInput && !nameInput.value.trim()) {
       nameInput.focus();
@@ -167,7 +195,7 @@
         console.error(e);
       }
     }
-  });
+  }
 
   load();
 </script>
