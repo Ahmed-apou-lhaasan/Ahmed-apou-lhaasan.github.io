@@ -245,6 +245,7 @@ async function delExam(id) {
 document.getElementById("examCancelEdit").addEventListener("click", () => {
   examForm.reset();
   document.getElementById("exam_id").value = "";
+  document.getElementById("exam_duration").value = "";
   questionsBuilder.innerHTML = "";
   document.getElementById("examCancelEdit").classList.add("hidden");
 });
@@ -255,6 +256,7 @@ examForm.addEventListener("submit", async (e) => {
   const payload = {
     title: document.getElementById("exam_title").value.trim(),
     grade: document.getElementById("exam_grade").value,
+    duration: Number(document.getElementById("exam_duration").value) || null,
     questions: collectQuestions(),
     updatedAt: Date.now()
   };
