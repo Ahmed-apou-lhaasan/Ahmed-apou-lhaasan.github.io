@@ -135,6 +135,15 @@
         if (oi === q.correctIndex) row.classList.add("result-correct");
         else if (oi === chosenVal && !isCorrect) row.classList.add("result-wrong");
       });
+      if (!isCorrect) {
+        const correctText = q.type === "tf"
+          ? (q.correctIndex === 0 ? "صح" : "خطأ")
+          : (q.options || [])[q.correctIndex];
+        fieldset.insertAdjacentHTML("beforeend", `
+          <div class="text-sm mt-2 p-2 rounded-lg" style="background:#eaf5ec;color:var(--success)">
+            ✅ التصويب: الإجابة الصحيحة هي "${escapeHtml(correctText || "")}"
+          </div>`);
+      }
     });
     submitBtn.classList.add("hidden");
     const pct = questions.length ? Math.round((correct / questions.length) * 100) : 0;
