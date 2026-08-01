@@ -229,6 +229,7 @@ async function editExam(id) {
   document.getElementById("exam_id").value = id;
   document.getElementById("exam_title").value = d.title || "";
   document.getElementById("exam_grade").value = d.grade || "1";
+  document.getElementById("exam_duration").value = d.duration || "";
   questionsBuilder.innerHTML = "";
   (d.questions || []).forEach(q => addQuestionRow(q));
   document.getElementById("examCancelEdit").classList.remove("hidden");
