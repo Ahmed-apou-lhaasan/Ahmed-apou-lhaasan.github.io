@@ -16,6 +16,7 @@
   <a id="backLink" href="/index.html" class="text-sm" style="color:var(--gold)">→ الرجوع للقسم</a>
   <h1 id="examTitle" class="display text-3xl my-4">جاري التحميل...</h1>
   <div id="examTimer" class="hidden mb-4 text-center p-3 rounded-xl font-bold text-lg" style="background:var(--paper-2)"></div>
+
   <!-- شاشة إدخال اسم الطالب -->
   <div id="nameGate" class="hidden mb-6">
     <label class="field-label">اكتب اسمك قبل بدء الامتحان</label>
@@ -23,10 +24,6 @@
   </div>
 
   <form id="examForm" class="flex flex-col gap-6"></form>
-
-  <div class="mt-6 flex items-center gap-3">
-    <button id="submitBtn" class="btn btn-primary hidden">تسليم الامتحان</button>
-  </div>
 
   <div id="resultBox" class="hidden mt-8 p-6 rounded-2xl text-center" style="background:var(--paper-2); border:1px solid var(--line)">
     <div class="text-sm mb-1" style="color:var(--ink-2)">نتيجتك</div>
@@ -45,9 +42,32 @@
   const id = new URLSearchParams(location.search).get("id");
   const titleEl = document.getElementById("examTitle");
   const form = document.getElementById("examForm");
-  const submitBtn = document.getElementById("submitBtn");
   const session = getStudentSession();
   let examData = null;
+  let shuffledQuestions = [];
+  let currentIndex = 0;
+  let answers = [];
+  let timerInterval = null;
+
+  function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function prepareQuestions(questions) {
+    return shuffleArray(questions).map(q => {
+      const opts = q.type === "tf" ? ["صح", "خطأ"] : (q.options || []);
+      const optsWithIndex = opts.map((opt, i) => ({ opt, i }));
+      const shuffledOpts = shuffleArray(optsWithIndex);
+      const newOptions = shuffledOpts.map(o => o.opt);
+      const newCorrectIndex = shuffledOpts.findIndex(o => o.i === q.correctIndex);
+      return { ...q, options: newOptions, correctIndex: newCorrectIndex };
+    });
+  }
 
   async function checkAlreadyTaken() {
     if (!session) return null;
@@ -62,16 +82,11 @@
   }
 
   async function load() {
-    if (!session) { location.replace("/student-login.html"); return; }
     if (!id) { titleEl.textContent = "لم يتم تحديد الامتحان"; return; }
     try {
       const snap = await getDoc(doc(db, "exams", id));
       if (!snap.exists()) { titleEl.textContent = "الامتحان غير موجود"; return; }
       examData = snap.data();
-      if (session && session.grade !== examData.grade) {
-        titleEl.textContent = "هذا الامتحان غير متاح لمرحلتك";
-        return;
-      }
       document.getElementById("backLink").href = `/grade.html?grade=${examData.grade}`;
       titleEl.textContent = examData.title || "امتحان";
 
@@ -79,9 +94,7 @@
       if (previous) {
         const pct = previous.total ? Math.round((previous.score / previous.total) * 100) : 0;
         document.getElementById("nameGate").innerHTML =
-          `<p class="text-sm" style="color:var(--ink-2)">
-             لقد حللت هذا الامتحان من قبل. نتيجتك كانت:
-           </p>`;
+          `<p class="text-sm" style="color:var(--ink-2)">لقد حللت هذا الامتحان من قبل. نتيجتك كانت:</p>`;
         document.getElementById("nameGate").classList.remove("hidden");
         document.getElementById("resultBox").classList.remove("hidden");
         document.getElementById("scoreText").textContent = `${previous.score} / ${previous.total} (${pct}%)`;
@@ -94,21 +107,10 @@
       }
       document.getElementById("nameGate").classList.remove("hidden");
 
-      (examData.questions || []).forEach((q, i) => {
-        const opts = q.type === "tf" ? ["صح", "خطأ"] : (q.options || []);
-        const optionsHtml = opts.map((opt, oi) => `
-          <label class="option-row">
-            <input type="radio" name="q${i}" value="${oi}" class="accent-current">
-            <span>${escapeHtml(opt)}</span>
-          </label>`).join("");
-
-        form.insertAdjacentHTML("beforeend", `
-          <fieldset data-qindex="${i}" class="border-0 p-0">
-            <legend class="font-bold mb-3">${i + 1}. ${escapeHtml(q.text || "")}</legend>
-            <div class="flex flex-col gap-2">${optionsHtml}</div>
-          </fieldset>`);
-      });
-      submitBtn.classList.remove("hidden");
+      shuffledQuestions = prepareQuestions(examData.questions || []);
+      answers = new Array(shuffledQuestions.length).fill(-1);
+      currentIndex = 0;
+      renderCurrentQuestion();
       startTimer();
     } catch (e) {
       titleEl.textContent = "حدث خطأ في التحميل";
@@ -116,7 +118,97 @@
     }
   }
 
-  let timerInterval = null;
+  function renderCurrentQuestion() {
+    const nameInput = document.getElementById("studentName");
+    if (!session && currentIndex === 0 && nameInput && !nameInput.value.trim()) {
+      // سيتم التحقق عند الضغط على الزر
+    }
+    const q = shuffledQuestions[currentIndex];
+    const opts = q.options || [];
+    const optionsHtml = opts.map((opt, oi) => `
+      <label class="option-row">
+        <input type="radio" name="currentQ" value="${oi}" class="accent-current" ${answers[currentIndex] === oi ? "checked" : ""}>
+        <span>${escapeHtml(opt)}</span>
+      </label>`).join("");
+
+    const isLast = currentIndex === shuffledQuestions.length - 1;
+    form.innerHTML = `
+      <div class="text-sm mb-2" style="color:var(--ink-2)">سؤال ${currentIndex + 1} من ${shuffledQuestions.length}</div>
+      <fieldset class="border-0 p-0">
+        <legend class="font-bold mb-3">${escapeHtml(q.text || "")}</legend>
+        <div class="flex flex-col gap-2">${optionsHtml}</div>
+      </fieldset>
+      <button type="button" id="nextQBtn" class="btn btn-primary mt-2 self-start">${isLast ? "تسليم الامتحان" : "السؤال التالي ←"}</button>
+    `;
+
+    document.getElementById("nextQBtn").addEventListener("click", () => {
+      const nameInput2 = document.getElementById("studentName");
+      if (!session && currentIndex === 0 && nameInput2 && !nameInput2.value.trim()) {
+        nameInput2.focus();
+        nameInput2.classList.add("ring-2");
+        return;
+      }
+      const chosen = form.querySelector('input[name="currentQ"]:checked');
+      if (!chosen) { alert("اختر إجابة قبل المتابعة"); return; }
+      answers[currentIndex] = Number(chosen.value);
+      if (isLast) {
+        submitExam();
+      } else {
+        currentIndex++;
+        renderCurrentQuestion();
+      }
+    });
+  }
+
+  async function submitExam() {
+    if (timerInterval) clearInterval(timerInterval);
+    let correct = 0;
+    const reviewHtml = shuffledQuestions.map((q, i) => {
+      const chosenVal = answers[i];
+      const isCorrect = chosenVal === q.correctIndex;
+      if (isCorrect) correct++;
+      const opts = q.options || [];
+      const optsHtml = opts.map((opt, oi) => {
+        let cls = "";
+        if (oi === q.correctIndex) cls = "result-correct";
+        else if (oi === chosenVal && !isCorrect) cls = "result-wrong";
+        return `<div class="option-row ${cls}"><span>${escapeHtml(opt)}</span></div>`;
+      }).join("");
+      const correctionLine = !isCorrect
+        ? `<div class="text-sm mt-2 p-2 rounded-lg" style="background:#eaf5ec;color:var(--success)">✅ التصويب: الإجابة الصحيحة هي "${escapeHtml(opts[q.correctIndex] || "")}"</div>`
+        : "";
+      return `
+        <fieldset class="border-0 p-0 mb-6">
+          <legend class="font-bold mb-3">${i + 1}. ${escapeHtml(q.text || "")}</legend>
+          <div class="flex flex-col gap-2">${optsHtml}</div>
+          ${correctionLine}
+        </fieldset>`;
+    }).join("");
+    form.innerHTML = reviewHtml;
+
+    const pct = shuffledQuestions.length ? Math.round((correct / shuffledQuestions.length) * 100) : 0;
+    document.getElementById("resultBox").classList.remove("hidden");
+    document.getElementById("scoreText").textContent = `${correct} / ${shuffledQuestions.length} (${pct}%)`;
+    document.getElementById("resultBox").scrollIntoView({ behavior: "smooth" });
+
+    if (session) {
+      try {
+        await addDoc(collection(db, "examResults"), {
+          studentId: session.id,
+          studentName: session.name,
+          examId: id,
+          examTitle: examData.title || "امتحان",
+          grade: examData.grade,
+          score: correct,
+          total: shuffledQuestions.length,
+          createdAt: Date.now()
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
   function startTimer() {
     if (!examData.duration) return;
     let remaining = examData.duration * 60;
@@ -135,66 +227,11 @@
       if (remaining <= 0) {
         clearInterval(timerInterval);
         timerBox.textContent = "⏱️ انتهى الوقت! جاري تسليم إجاباتك...";
+        const lastAnswer = form.querySelector('input[name="currentQ"]:checked');
+        answers[currentIndex] = lastAnswer ? Number(lastAnswer.value) : answers[currentIndex];
         submitExam();
       }
     }, 1000);
-  }
-
-  submitBtn.addEventListener("click", () => submitExam());
-
-  async function submitExam() {
-    if (timerInterval) clearInterval(timerInterval);
-    const nameInput = document.getElementById("studentName");
-    if (!session && nameInput && !nameInput.value.trim()) {
-      nameInput.focus();
-      nameInput.classList.add("ring-2");
-      return;
-    }
-    let correct = 0;
-    const questions = examData.questions || [];
-    questions.forEach((q, i) => {
-      const chosen = form.querySelector(`input[name="q${i}"]:checked`);
-      const fieldset = form.querySelector(`fieldset[data-qindex="${i}"]`);
-      fieldset.querySelectorAll("input").forEach(inp => inp.disabled = true);
-      const chosenVal = chosen ? Number(chosen.value) : -1;
-      const isCorrect = chosenVal === q.correctIndex;
-      if (isCorrect) correct++;
-      fieldset.querySelectorAll(".option-row").forEach((row, oi) => {
-        if (oi === q.correctIndex) row.classList.add("result-correct");
-        else if (oi === chosenVal && !isCorrect) row.classList.add("result-wrong");
-      });
-      if (!isCorrect) {
-        const correctText = q.type === "tf"
-          ? (q.correctIndex === 0 ? "صح" : "خطأ")
-          : (q.options || [])[q.correctIndex];
-        fieldset.insertAdjacentHTML("beforeend", `
-          <div class="text-sm mt-2 p-2 rounded-lg" style="background:#eaf5ec;color:var(--success)">
-            ✅ التصويب: الإجابة الصحيحة هي "${escapeHtml(correctText || "")}"
-          </div>`);
-      }
-    });
-    submitBtn.classList.add("hidden");
-    const pct = questions.length ? Math.round((correct / questions.length) * 100) : 0;
-    document.getElementById("resultBox").classList.remove("hidden");
-    document.getElementById("scoreText").textContent = `${correct} / ${questions.length} (${pct}%)`;
-    document.getElementById("resultBox").scrollIntoView({ behavior: "smooth" });
-
-    if (session) {
-      try {
-        await addDoc(collection(db, "examResults"), {
-          studentId: session.id,
-          studentName: session.name,
-          examId: id,
-          examTitle: examData.title || "امتحان",
-          grade: examData.grade,
-          score: correct,
-          total: questions.length,
-          createdAt: Date.now()
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }
   }
 
   load();
