@@ -230,3 +230,93 @@ main{ animation: fadeInUp .5s ease both; }
   70%{ box-shadow: 0 0 0 16px rgba(37,211,102,0); }
   100%{ box-shadow: 0 0 0 0 rgba(37,211,102,0); }
 }
+/* ============================================
+   ألوان حيوية وحركات إضافية
+   ============================================ */
+:root{
+  --fun1:#E85D75; --fun2:#3EC1D3; --fun3:#F9C74F; --fun4:#9B5DE5; --fun5:#43AA8B;
+}
+
+/* خلفية متحركة خفيفة لكل الصفحة */
+body{
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(184,134,60,.10) 0, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(31,59,51,.08) 0, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(232,93,117,.06) 0, transparent 35%),
+    radial-gradient(circle at 20% 30%, rgba(62,193,211,.06) 0, transparent 35%);
+  background-size: 200% 200%;
+  animation: bgShift 18s ease-in-out infinite alternate;
+}
+@keyframes bgShift{
+  0%{ background-position: 0% 0%; }
+  100%{ background-position: 100% 100%; }
+}
+
+/* تلوين بطاقات المراحل بألوان مختلفة لكل كارت */
+.stage-card:nth-child(1)::before{ background: linear-gradient(90deg, var(--fun1), var(--gold)); }
+.stage-card:nth-child(2)::before{ background: linear-gradient(90deg, var(--fun2), var(--ink-2)); }
+.stage-card:nth-child(3)::before{ background: linear-gradient(90deg, var(--fun3), var(--fun1)); }
+.stage-card:nth-child(4)::before{ background: linear-gradient(90deg, var(--fun4), var(--fun5)); }
+.stage-card{ animation: fadeInUp .45s ease both, floaty 4s ease-in-out infinite; }
+.stage-card:nth-child(2){ animation-delay: .05s, .3s }
+.stage-card:nth-child(3){ animation-delay: .1s, .6s }
+.stage-card:nth-child(4){ animation-delay: .15s, .9s }
+@keyframes floaty{
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-6px); }
+}
+
+/* شارات ملونة أكتر حيوية */
+.badge-video{ background:#e0f7fa; color:#00838f; }
+.badge-pdf{ background:#fff3e0; color:#e65100; }
+.badge-text{ background:#e8f5e9; color:#2e7d32; }
+.badge-exam{
+  background: linear-gradient(90deg, var(--fun3), var(--gold));
+  color:#5c3d00;
+  animation: badgePulse 1.8s ease-in-out infinite;
+}
+@keyframes badgePulse{
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.06); }
+}
+
+/* أيقونة الشعار بتلمع شوية */
+.brand-mark{
+  background: linear-gradient(160deg, var(--fun3), var(--gold), var(--fun1));
+  background-size: 200% 200%;
+  animation: brandGlow 4s ease-in-out infinite;
+}
+@keyframes brandGlow{
+  0%,100%{ background-position: 0% 50%; }
+  50%{ background-position: 100% 50%; }
+}
+
+/* حركة اهتزاز خفيفة للأزرار الذهبية عند الظهور */
+.btn-gold{
+  background: linear-gradient(90deg, var(--gold), var(--fun1));
+  background-size: 200% auto;
+  animation: goldShimmer 3s linear infinite;
+}
+@keyframes goldShimmer{
+  0%{ background-position: 0% 50%; }
+  100%{ background-position: 200% 50%; }
+}
+
+/* احتفال بسيط عند ظهور النتيجة */
+#scoreText, .display.text-4xl{
+  animation: popCelebrate .6s ease;
+}
+@keyframes popCelebrate{
+  0%{ transform: scale(.5); opacity:0; }
+  60%{ transform: scale(1.15); opacity:1; }
+  100%{ transform: scale(1); }
+}
+
+/* أيقونات الدروس/الامتحانات بتتحرك شوية عند الوقوف عليها */
+.item-card .text-2xl{
+  display:inline-block;
+  transition: transform .3s ease;
+}
+.item-card:hover .text-2xl{
+  transform: scale(1.2) rotate(-8deg);
+}
