@@ -163,11 +163,18 @@
   async function submitExam() {
     if (timerInterval) clearInterval(timerInterval);
     let correct = 0;
+    const answersDetail = [];
     const reviewHtml = shuffledQuestions.map((q, i) => {
       const chosenVal = answers[i];
       const isCorrect = chosenVal === q.correctIndex;
       if (isCorrect) correct++;
       const opts = q.options || [];
+      answersDetail.push({
+        question: q.text || "",
+        chosenText: chosenVal >= 0 ? (opts[chosenVal] || "لم يجب") : "لم يجب",
+        correctText: opts[q.correctIndex] || "",
+        isCorrect
+      });
       const optsHtml = opts.map((opt, oi) => {
         let cls = "";
         if (oi === q.correctIndex) cls = "result-correct";
@@ -190,6 +197,7 @@
     document.getElementById("resultBox").classList.remove("hidden");
     document.getElementById("scoreText").textContent = `${correct} / ${shuffledQuestions.length} (${pct}%)`;
     document.getElementById("resultBox").scrollIntoView({ behavior: "smooth" });
+    fireConfetti();
 
     if (session) {
       try {
@@ -201,6 +209,7 @@
           grade: examData.grade,
           score: correct,
           total: shuffledQuestions.length,
+          answersDetail,
           createdAt: Date.now()
         });
       } catch (e) {
