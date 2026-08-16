@@ -510,24 +510,65 @@ async function loadAllResultsAdmin() {
   const snap = await getDocs(collection(db, "examResults"));
   if (snap.empty) { resultsAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد نتائج بعد.</p>`; return; }
   let rows = [];
-  snap.forEach(docu => rows.push(docu.data()));
+  snap.forEach(docu => rows.push({ id: docu.id, ...docu.data() }));
   if (resultsGradeFilter.value) {
     rows = rows.filter(r => r.grade === resultsGradeFilter.value);
   }
   if (rows.length === 0) { resultsAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد نتائج لهذه المرحلة.</p>`; return; }
-  rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  resultsAdminList.innerHTML = "";
+
+  const byExam = {};
   rows.forEach(r => {
-    const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
-    const date = r.createdAt ? new Date(r.createdAt).toLocaleString("ar-EG") : "";
+    const key = r.examId || r.examTitle || "بدون اسم";
+    if (!byExam[key]) byExam[key] = { title: r.examTitle || "امتحان", grade: r.grade, items: [] };
+    byExam[key].items.push(r);
+  });
+
+  const examGroups = Object.values(byExam).sort((a, b) => {
+    const aLatest = Math.max(...a.items.map(i => i.createdAt || 0));
+    const bLatest = Math.max(...b.items.map(i => i.createdAt || 0));
+    return bLatest - aLatest;
+  });
+
+  resultsAdminList.innerHTML = "";
+  examGroups.forEach(group => {
+    group.items.sort((a, b) => (b.score / (b.total || 1)) - (a.score / (a.total || 1)));
     resultsAdminList.insertAdjacentHTML("beforeend", `
-      <div class="item-card">
-        <div class="flex-1">
-          <div class="font-bold">${escapeHtml(r.studentName || "طالب")} — ${escapeHtml(r.examTitle || "امتحان")}</div>
-          <div class="text-xs opacity-60">${GRADE_LABELS[r.grade] || r.grade} · ${date}</div>
-        </div>
-        <span class="badge badge-exam">${r.score} / ${r.total} (${pct}%)</span>
-      </div>`);
+      <div class="font-bold mt-3 mb-1" style="color:var(--gold)">📝 ${escapeHtml(group.title)} — ${GRADE_LABELS[group.grade] || group.grade} (${group.items.length} طالب)</div>`);
+    group.items.forEach(r => {
+      const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
+      const date = r.createdAt ? new Date(r.createdAt).toLocaleString("ar-EG") : "";
+      const hasDetail = Array.isArray(r.answersDetail) && r.answersDetail.length > 0;
+      resultsAdminList.insertAdjacentHTML("beforeend", `
+        <div class="item-card flex-col items-stretch">
+          <div class="flex items-center gap-3">
+            <div class="flex-1">
+              <div class="font-bold">${escapeHtml(r.studentName || "طالب")}</div>
+              <div class="text-xs opacity-60">${date}</div>
+            </div>
+            <span class="badge badge-exam">${r.score} / ${r.total} (${pct}%)</span>
+            ${hasDetail ? `<button class="btn btn-outline btn-sm" data-detail="${r.id}">التفاصيل</button>` : ""}
+          </div>
+          <div id="detail-${r.id}" class="hidden mt-3 pt-3" style="border-top:1px dashed var(--line)"></div>
+        </div>`);
+    });
+  });
+
+  resultsAdminList.querySelectorAll("[data-detail]").forEach(b => {
+    b.addEventListener("click", () => {
+      const panel = document.getElementById(`detail-${b.dataset.detail}`);
+      if (!panel.classList.contains("hidden")) { panel.classList.add("hidden"); return; }
+      if (!panel.dataset.rendered) {
+        const r = rows.find(x => x.id === b.dataset.detail);
+        panel.innerHTML = (r.answersDetail || []).map((a, i) => `
+          <div class="text-sm mb-2 p-2 rounded-lg" style="background:${a.isCorrect ? '#eaf5ec' : '#fbeae7'}">
+            <div class="font-bold">${i + 1}. ${escapeHtml(a.question)}</div>
+            <div>إجابة الطالب: ${escapeHtml(a.chosenText || "لم يجب")}</div>
+            ${!a.isCorrect ? `<div style="color:var(--success)">الصحيح: ${escapeHtml(a.correctText)}</div>` : ""}
+          </div>`).join("");
+        panel.dataset.rendered = "1";
+      }
+      panel.classList.remove("hidden");
+    });
   });
 }
 
