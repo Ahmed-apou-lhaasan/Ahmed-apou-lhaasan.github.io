@@ -402,17 +402,29 @@ async function loadStudentsAdmin() {
   studentsAdminList.innerHTML = `<div class="item-card skeleton h-14"></div>`;
   const snap = await getDocs(collection(db, "students"));
   if (snap.empty) { studentsAdminList.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب مسجلون بعد.</p>`; return; }
-  studentsAdminList.innerHTML = "";
+  const byGrade = {};
   snap.forEach(docu => {
     const d = docu.data();
+    if (!byGrade[d.grade]) byGrade[d.grade] = [];
+    byGrade[d.grade].push({ id: docu.id, ...d });
+  });
+  const gradeOrder = ["1", "2", "3", "grammar"];
+  studentsAdminList.innerHTML = "";
+  gradeOrder.forEach(g => {
+    if (!byGrade[g] || byGrade[g].length === 0) return;
+    byGrade[g].sort((a, b) => (a.name || "").localeCompare(b.name || "", "ar"));
     studentsAdminList.insertAdjacentHTML("beforeend", `
-      <div class="item-card">
-        <div class="flex-1">
-          <div class="font-bold">${escapeHtml(d.name)}</div>
-          <div class="text-xs opacity-60">${GRADE_LABELS[d.grade] || d.grade} · الكود: <span class="font-bold" style="color:var(--gold)">${escapeHtml(String(d.code || "—"))}</span></div>
-        </div>
-        <button class="btn btn-danger btn-sm" data-del="${docu.id}">حذف</button>
-      </div>`);
+      <div class="font-bold mt-3 mb-1" style="color:var(--gold)">— ${GRADE_LABELS[g] || g} (${byGrade[g].length}) —</div>`);
+    byGrade[g].forEach(d => {
+      studentsAdminList.insertAdjacentHTML("beforeend", `
+        <div class="item-card">
+          <div class="flex-1">
+            <div class="font-bold">${escapeHtml(d.name)}</div>
+            <div class="text-xs opacity-60">الكود: <span class="font-bold" style="color:var(--gold)">${escapeHtml(String(d.code || "—"))}</span></div>
+          </div>
+          <button class="btn btn-danger btn-sm" data-del="${d.id}">حذف</button>
+        </div>`);
+    });
   });
   studentsAdminList.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
     if (!confirm("حذف هذا الطالب؟")) return;
