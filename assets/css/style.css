@@ -320,3 +320,49 @@ body{
 .item-card:hover .text-2xl{
   transform: scale(1.2) rotate(-8deg);
 }
+/* ============================================
+   كونفيتي الاحتفال + زخارف صفحة دخول الطالب
+   ============================================ */
+.confetti-piece{
+  position: fixed;
+  top: -10px;
+  width: 8px;
+  height: 14px;
+  z-index: 9999;
+  opacity: .9;
+  animation-name: confettiFall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+  border-radius: 2px;
+}
+@keyframes confettiFall{
+  0%{ transform: translateY(0) rotate(0deg); opacity: 1; }
+  100%{ transform: translateY(105vh) rotate(540deg); opacity: 0; }
+}
+
+.blob-decor{
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(30px);
+  opacity: .35;
+  z-index: 0;
+  pointer-events: none;
+  animation: blobFloat 6s ease-in-out infinite;
+}
+@keyframes blobFloat{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  50%{ transform: translate(10px,-14px) scale(1.08); }
+}
+
+.display-shimmer{
+  background: linear-gradient(90deg, var(--ink), var(--gold), var(--fun1), var(--ink));
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmerText 4s linear infinite;
+}
+@keyframes shimmerText{
+  0%{ background-position: 0% 50%; }
+  100%{ background-position: 300% 50%; }
+}
