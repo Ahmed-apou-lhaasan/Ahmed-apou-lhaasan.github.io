@@ -12,12 +12,16 @@
 <body>
 <div id="app-header"></div>
 
-<main class="flex items-center justify-center px-4 py-10">
-  <div class="w-full max-w-sm p-8 rounded-2xl relative overflow-hidden" style="background:#fff; box-shadow:var(--shadow); border:2px solid var(--gold-light)">
+<main class="flex items-center justify-center px-4 py-10 relative overflow-hidden" style="min-height:70vh">
+  <div class="blob-decor" style="width:180px;height:180px;background:var(--fun2);top:5%;right:5%"></div>
+  <div class="blob-decor" style="width:220px;height:220px;background:var(--fun1);bottom:5%;left:5%;animation-delay:1s"></div>
+  <div class="blob-decor" style="width:140px;height:140px;background:var(--fun3);top:40%;left:0%;animation-delay:2s"></div>
+
+  <div class="w-full max-w-sm p-8 rounded-2xl relative z-10" style="background:#fff; box-shadow:var(--shadow); border:2px solid var(--gold-light)">
     <div class="text-center mb-6 relative">
       <div class="text-3xl mb-2" style="animation: floaty 3s ease-in-out infinite">🎓✨📖</div>
       <span class="brand-mark mx-auto mb-3" style="display:flex">أ</span>
-      <h1 class="display text-2xl">دخول الطالب</h1>
+      <h1 class="display display-shimmer text-2xl">دخول الطالب</h1>
       <p class="text-sm opacity-60 mt-1">اختر مرحلتك واكتب اسمك والكود اللي معاك</p>
     </div>
     <form id="loginForm" class="flex flex-col gap-4">
