@@ -113,3 +113,17 @@ export function escapeHtml(str = "") {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[m]));
 }
+
+export function fireConfetti() {
+  const colors = ["#E85D75", "#3EC1D3", "#F9C74F", "#9B5DE5", "#43AA8B", "#B8863C"];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (2 + Math.random() * 1.5) + "s";
+    el.style.animationDelay = (Math.random() * 0.3) + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
