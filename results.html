@@ -14,7 +14,12 @@
 
 <main class="max-w-2xl mx-auto px-4 py-8">
   <h1 class="display text-3xl mb-1">نتائجي</h1>
-  <p id="studentNameLine" class="mb-8" style="color:var(--ink-2)"></p>
+<p id="studentNameLine" class="mb-8" style="color:var(--ink-2)"></p>
+
+  <div id="myRankBox" class="hidden mb-8 p-5 rounded-2xl text-center" style="background:linear-gradient(135deg, var(--gold-light), var(--gold)); color:#fff">
+    <div class="text-sm opacity-90 mb-1">ترتيبك في فصلك</div>
+    <div id="myRankText" class="display text-3xl"></div>
+  </div>
 
   <div id="resultsList" class="flex flex-col gap-3">
     <div class="item-card skeleton h-16"></div>
@@ -73,6 +78,38 @@
     }
   }
   load();
+  loadMyRank();
+
+  async function loadMyRank() {
+    if (!session) return;
+    try {
+      const q2 = query(collection(db, "examResults"), where("grade", "==", session.grade));
+      const snap2 = await getDocs(q2);
+      if (snap2.empty) return;
+      const byStudent = {};
+      snap2.forEach(docu => {
+        const r = docu.data();
+        const key = r.studentId || r.studentName;
+        if (!byStudent[key]) {
+          byStudent[key] = { totalScore: 0, totalPossible: 0, examCount: 0 };
+        }
+        byStudent[key].totalScore += Number(r.score) || 0;
+        byStudent[key].totalPossible += Number(r.total) || 0;
+        byStudent[key].examCount += 1;
+      });
+      const ranked = Object.entries(byStudent)
+        .map(([sid, s]) => ({ sid, ...s, pct: s.totalPossible ? Math.round((s.totalScore / s.totalPossible) * 100) : 0 }))
+        .sort((a, b) => b.examCount - a.examCount || b.pct - a.pct);
+      const myPosition = ranked.findIndex(r => r.sid === session.id);
+      if (myPosition === -1) return;
+      const myRankBox = document.getElementById("myRankBox");
+      const myRankText = document.getElementById("myRankText");
+      myRankBox.classList.remove("hidden");
+      myRankText.textContent = `#${myPosition + 1} من ${ranked.length} طالب`;
+    } catch (e) {
+      console.error(e);
+    }
+  }
 </script>
 </body>
 </html>
