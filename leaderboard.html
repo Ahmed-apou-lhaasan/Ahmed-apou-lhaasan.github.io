@@ -84,8 +84,7 @@
       const rows = Object.values(byStudent)
         .filter(s => s.totalPossible > 0)
         .map(s => ({ ...s, pct: Math.round((s.totalScore / s.totalPossible) * 100) }))
-        .sort((a, b) => b.pct - a.pct || b.examCount - a.examCount);
-
+        .sort((a, b) => b.examCount - a.examCount || b.pct - a.pct);
       if (rows.length === 0) {
         list.innerHTML = "";
         emptyMsg.classList.remove("hidden");
