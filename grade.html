@@ -81,14 +81,17 @@
       snap.forEach(docu => lessons.push({ id: docu.id, ...docu.data() }));
       lessons.sort((a, b) => (a.order || 0) - (b.order || 0));
       box.innerHTML = "";
+      const isNew = (createdAt) => createdAt && (Date.now() - createdAt) < (3 * 24 * 60 * 60 * 1000);
       lessons.forEach(d => {
         const meta = typeMeta[d.type] || typeMeta.text;
+        const newBadge = isNew(d.createdAt) ? `<span class="badge" style="background:#fdecea;color:var(--clay)">🆕 جديد</span>` : "";
         box.insertAdjacentHTML("beforeend", `
           <a href="/lesson.html?id=${d.id}" class="item-card">
             <span class="text-2xl">${meta.icon}</span>
             <div class="flex-1">
               <div class="font-bold">${escapeHtml(d.title || "بدون عنوان")}</div>
             </div>
+            ${newBadge}
             <span class="badge ${meta.cls}">${meta.label}</span>
           </a>`);
       });
@@ -111,6 +114,8 @@
       box.innerHTML = "";
       snap.forEach(docu => {
         const d = docu.data();
+        const isNewExam = d.createdAt && (Date.now() - d.createdAt) < (3 * 24 * 60 * 60 * 1000);
+        const newBadge = isNewExam ? `<span class="badge" style="background:#fdecea;color:var(--clay)">🆕 جديد</span>` : "";
         box.insertAdjacentHTML("beforeend", `
           <a href="/exam.html?id=${docu.id}" class="item-card">
             <span class="text-2xl">📝</span>
@@ -118,6 +123,7 @@
               <div class="font-bold">${escapeHtml(d.title || "امتحان")}</div>
               <div class="text-xs opacity-60">${(d.questions || []).length} سؤال</div>
             </div>
+            ${newBadge}
             <span class="badge badge-exam">ابدأ الامتحان</span>
           </a>`);
       });
