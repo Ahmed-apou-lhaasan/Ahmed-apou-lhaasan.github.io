@@ -16,6 +16,16 @@
   <h1 class="display text-3xl mb-1">نتائجي</h1>
 <p id="studentNameLine" class="mb-8" style="color:var(--ink-2)"></p>
 
+  <div id="rankBox" class="hidden mb-8 p-6 rounded-2xl text-center relative overflow-hidden" style="background:linear-gradient(135deg, var(--ink), var(--ink-2))">
+    <div class="blob-decor" style="width:120px;height:120px;background:var(--gold);top:-20px;left:-20px"></div>
+    <div id="rankIcon" class="text-5xl mb-2"></div>
+    <div id="rankName" class="display text-2xl" style="color:var(--paper)"></div>
+    <div id="rankXp" class="text-sm mt-1" style="color:var(--paper);opacity:.85"></div>
+    <div class="mt-3 h-2 rounded-full overflow-hidden" style="background:rgba(255,255,255,.25)">
+      <div id="rankProgress" class="h-full" style="background:var(--gold);width:0%;transition:width .6s ease"></div>
+    </div>
+    <div id="rankNext" class="text-xs mt-2" style="color:var(--paper);opacity:.75"></div>
+  </div>
   <div id="myRankBox" class="hidden mb-8 p-5 rounded-2xl text-center" style="background:linear-gradient(135deg, var(--gold-light), var(--gold)); color:#fff">
     <div class="text-sm opacity-90 mb-1">ترتيبك في فصلك</div>
     <div id="myRankText" class="display text-3xl"></div>
@@ -59,6 +69,7 @@
       const results = [];
       snap.forEach(docu => results.push(docu.data()));
       results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      renderRank(results.reduce((sum, r) => sum + (Number(r.score) || 0), 0));
       box.innerHTML = "";
       results.forEach(r => {
         const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
@@ -80,6 +91,34 @@
   load();
   loadMyRank();
 
+  const RANK_TIERS = [
+    { min: 0, name: "مكتشف", icon: "🔍" },
+    { min: 15, name: "فارس الكلمة", icon: "⚔️" },
+    { min: 40, name: "حارس البلاغة", icon: "🛡️" },
+    { min: 80, name: "أسطورة الضاد", icon: "👑" }
+  ];
+
+  function renderRank(xp) {
+    if (!session) return;
+    let currentIdx = 0;
+    RANK_TIERS.forEach((tier, i) => { if (xp >= tier.min) currentIdx = i; });
+    const current = RANK_TIERS[currentIdx];
+    const next = RANK_TIERS[currentIdx + 1];
+
+    document.getElementById("rankBox").classList.remove("hidden");
+    document.getElementById("rankIcon").textContent = current.icon;
+    document.getElementById("rankName").textContent = current.name;
+    document.getElementById("rankXp").textContent = `${xp} نقطة`;
+
+    if (next) {
+      const progress = Math.min(100, Math.round(((xp - current.min) / (next.min - current.min)) * 100));
+      document.getElementById("rankProgress").style.width = progress + "%";
+      document.getElementById("rankNext").textContent = `باقي ${next.min - xp} نقطة للوصول لرتبة "${next.name}" ${next.icon}`;
+    } else {
+      document.getElementById("rankProgress").style.width = "100%";
+      document.getElementById("rankNext").textContent = "وصلت لأعلى رتبة! 🎉";
+    }
+  }
   async function loadMyRank() {
     if (!session) return;
     try {
