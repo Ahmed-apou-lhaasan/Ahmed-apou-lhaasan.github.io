@@ -69,7 +69,9 @@
       const results = [];
       snap.forEach(docu => results.push(docu.data()));
       results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      renderRank(results.reduce((sum, r) => sum + (Number(r.score) || 0), 0));
+      const examXp = results.reduce((sum, r) => sum + (Number(r.score) || 0), 0);
+      const challengeXp = await computeChallengeXp();
+      renderRank(examXp + challengeXp);
       box.innerHTML = "";
       results.forEach(r => {
         const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
@@ -147,6 +149,24 @@
       myRankText.textContent = `#${myPosition + 1} من ${ranked.length} طالب`;
     } catch (e) {
       console.error(e);
+    }}
+
+  async function computeChallengeXp() {
+    if (!session) return 0;
+    try {
+      const q3 = query(collection(db, "challenges"), where("grade", "==", session.grade));
+      const snap3 = await getDocs(q3);
+      let total = 0;
+      snap3.forEach(docu => {
+        const d = docu.data();
+        if ((d.completedStudentIds || []).includes(session.id)) {
+          total += Number(d.xpReward) || 0;
+        }
+      });
+      return total;
+    } catch (e) {
+      console.error(e);
+      return 0;
     }
   }
 </script>
