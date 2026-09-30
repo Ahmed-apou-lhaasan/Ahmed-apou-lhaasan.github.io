@@ -732,6 +732,130 @@ loadAttendanceRoster();
 loadAttendanceHistory();
 loadAllResultsAdmin();
 loadAbsenceAlerts();
+/* =====================================================================
+   التحدي اليومي/الأسبوعي
+   ===================================================================== */
+const challengeForm = document.getElementById("challengeForm");
+const challengeAdminList = document.getElementById("challengeAdminList");
+let currentChCompletionId = null;
+
+async function loadChallengeAdmin() {
+  challengeAdminList.innerHTML = `<div class="item-card skeleton h-14"></div>`;
+  const snap = await getDocs(collection(db, "challenges"));
+  if (snap.empty) { challengeAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد تحديات بعد.</p>`; return; }
+  challengeAdminList.innerHTML = "";
+  snap.forEach(docu => {
+    const d = docu.data();
+    challengeAdminList.insertAdjacentHTML("beforeend", `
+      <div class="item-card">
+        <div class="flex-1">
+          <div class="font-bold">${escapeHtml(d.title)}</div>
+          <div class="text-xs opacity-60">${GRADE_LABELS[d.grade] || d.grade} · ${d.xpReward || 0} نقطة · أنجزه: ${(d.completedStudentIds || []).length}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" data-track="${docu.id}">تسجيل الإنجاز</button>
+        <button class="btn btn-outline btn-sm" data-edit="${docu.id}">تعديل</button>
+        <button class="btn btn-danger btn-sm" data-del="${docu.id}">حذف</button>
+      </div>`);
+  });
+  challengeAdminList.querySelectorAll("[data-track]").forEach(b => b.addEventListener("click", () => openChCompletionPanel(b.dataset.track)));
+  challengeAdminList.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", () => editChallenge(b.dataset.edit)));
+  challengeAdminList.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => delChallenge(b.dataset.del)));
+}
+
+async function editChallenge(id) {
+  const snap = await getDoc(doc(db, "challenges", id));
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById("ch_id").value = id;
+  document.getElementById("ch_title").value = d.title || "";
+  document.getElementById("ch_grade").value = d.grade || "1";
+  document.getElementById("ch_expires").value = d.expiresAt || "";
+  document.getElementById("ch_xp").value = d.xpReward || 5;
+  document.getElementById("ch_content").value = d.content || "";
+  document.getElementById("chCancelEdit").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function delChallenge(id) {
+  if (!confirm("هل تريد حذف هذا التحدي نهائياً؟")) return;
+  await deleteDoc(doc(db, "challenges", id));
+  loadChallengeAdmin();
+}
+
+document.getElementById("chCancelEdit").addEventListener("click", () => {
+  challengeForm.reset();
+  document.getElementById("ch_id").value = "";
+  document.getElementById("chCancelEdit").classList.add("hidden");
+});
+
+challengeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("ch_id").value;
+  const payload = {
+    title: document.getElementById("ch_title").value.trim(),
+    grade: document.getElementById("ch_grade").value,
+    expiresAt: document.getElementById("ch_expires").value || null,
+    xpReward: Number(document.getElementById("ch_xp").value) || 5,
+    content: document.getElementById("ch_content").value.trim(),
+    updatedAt: Date.now()
+  };
+  if (id) {
+    await updateDoc(doc(db, "challenges", id), payload);
+  } else {
+    payload.createdAt = Date.now();
+    payload.completedStudentIds = [];
+    await addDoc(collection(db, "challenges"), payload);
+  }
+  challengeForm.reset();
+  document.getElementById("ch_id").value = "";
+  document.getElementById("chCancelEdit").classList.add("hidden");
+  loadChallengeAdmin();
+});
+
+async function openChCompletionPanel(id) {
+  currentChCompletionId = id;
+  const snap = await getDoc(doc(db, "challenges", id));
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById("chCompletionTitle").textContent = `${d.title} — ${GRADE_LABELS[d.grade] || d.grade}`;
+  document.getElementById("chCompletionPanel").classList.remove("hidden");
+  const listEl = document.getElementById("challengeStudentList");
+  listEl.innerHTML = `<div class="item-card skeleton h-12"></div>`;
+  const studentsSnap = await getDocs(query(collection(db, "students"), where("grade", "==", d.grade)));
+  if (studentsSnap.empty) {
+    listEl.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب في هذه المرحلة.</p>`;
+    return;
+  }
+  const completedIds = d.completedStudentIds || [];
+  listEl.innerHTML = "";
+  studentsSnap.forEach(docu => {
+    const sd = docu.data();
+    const checked = completedIds.includes(docu.id) ? "checked" : "";
+    listEl.insertAdjacentHTML("beforeend", `
+      <label class="option-row">
+        <input type="checkbox" class="ch-check" value="${docu.id}" ${checked}>
+        <span>${escapeHtml(sd.name)}</span>
+        <span class="text-xs opacity-50">(علّم عند الإنجاز)</span>
+      </label>`);
+  });
+  document.getElementById("chCompletionPanel").scrollIntoView({ behavior: "smooth" });
+}
+
+document.getElementById("closeChCompletionPanel").addEventListener("click", () => {
+  document.getElementById("chCompletionPanel").classList.add("hidden");
+  currentChCompletionId = null;
+});
+
+document.getElementById("saveChallengeCompletionBtn").addEventListener("click", async () => {
+  if (!currentChCompletionId) return;
+  const completedIds = [...document.querySelectorAll(".ch-check:checked")].map(c => c.value);
+  await updateDoc(doc(db, "challenges", currentChCompletionId), { completedStudentIds: completedIds });
+  document.getElementById("challengeSavedMsg").classList.remove("hidden");
+  setTimeout(() => document.getElementById("challengeSavedMsg").classList.add("hidden"), 2500);
+  loadChallengeAdmin();
+});
+
+loadHomeworkAdmin();
 loadPaymentRoster();
 loadPaymentHistory();
-loadHomeworkAdmin();
+loadChallengeAdmin();
