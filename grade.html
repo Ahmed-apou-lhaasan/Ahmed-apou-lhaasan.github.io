@@ -26,6 +26,14 @@
   </section>
 
   <section class="mb-10">
+    <h2 class="text-xl font-bold mb-3" style="color:var(--ink-2)">🎯 تحدي المرحلة</h2>
+    <div id="challengeList" class="flex flex-col gap-3">
+      <div class="item-card skeleton h-16"></div>
+    </div>
+    <p id="noChallenge" class="hidden text-sm opacity-60 mt-2">لا يوجد تحدي متاح حالياً.</p>
+  </section>
+
+  <section class="mb-10">
     <h2 class="text-xl font-bold mb-3" style="color:var(--ink-2)">📚 الواجبات</h2>
     <div id="homeworkList" class="flex flex-col gap-3">
       <div class="item-card skeleton h-16"></div>
@@ -166,8 +174,46 @@
     }
   }
 
+  async function loadChallenge() {
+    const box = document.getElementById("challengeList");
+    try {
+      const q2 = query(collection(db, "challenges"), where("grade", "==", grade));
+      const snap2 = await getDocs(q2);
+      const today = new Date().toISOString().slice(0, 10);
+      const active = [];
+      snap2.forEach(docu => {
+        const d = docu.data();
+        if (!d.expiresAt || d.expiresAt >= today) active.push(d);
+      });
+      if (active.length === 0) {
+        box.innerHTML = "";
+        document.getElementById("noChallenge").classList.remove("hidden");
+        return;
+      }
+      active.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      box.innerHTML = "";
+      active.forEach(d => {
+        const expiresLine = d.expiresAt ? `<div class="text-xs opacity-60 mt-1">ينتهي في: ${escapeHtml(d.expiresAt)}</div>` : "";
+        box.insertAdjacentHTML("beforeend", `
+          <div class="item-card items-start" style="background:linear-gradient(135deg, var(--ink), var(--ink-2))">
+            <span class="text-2xl">🎯</span>
+            <div class="flex-1">
+              <div class="font-bold" style="color:var(--paper)">${escapeHtml(d.title || "تحدي")}</div>
+              <div class="text-sm mt-1 whitespace-pre-wrap" style="color:var(--paper);opacity:.9">${escapeHtml(d.content || "")}</div>
+              ${expiresLine}
+            </div>
+            <span class="badge" style="background:var(--gold);color:#fff">⭐ ${d.xpReward || 0} نقطة</span>
+          </div>`);
+      });
+    } catch (e) {
+      box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل التحدي.</p>`;
+      console.error(e);
+    }
+  }
+
   loadLessons();
   loadHomework();
+  loadChallenge();
   loadExams();
 </script>
 </body>
