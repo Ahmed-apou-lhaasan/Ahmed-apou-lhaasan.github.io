@@ -858,4 +858,121 @@ document.getElementById("saveChallengeCompletionBtn").addEventListener("click", 
 loadHomeworkAdmin();
 loadPaymentRoster();
 loadPaymentHistory();
+/* =====================================================================
+   الفرق / التحالفات
+   ===================================================================== */
+const teamForm = document.getElementById("teamForm");
+const teamsAdminList = document.getElementById("teamsAdminList");
+let currentTeamMembersId = null;
+
+async function loadTeamsAdmin() {
+  teamsAdminList.innerHTML = `<div class="item-card skeleton h-14"></div>`;
+  const snap = await getDocs(collection(db, "teams"));
+  if (snap.empty) { teamsAdminList.innerHTML = `<p class="text-sm opacity-60">لا توجد فرق بعد.</p>`; return; }
+  teamsAdminList.innerHTML = "";
+  snap.forEach(docu => {
+    const d = docu.data();
+    teamsAdminList.insertAdjacentHTML("beforeend", `
+      <div class="item-card">
+        <div class="flex-1">
+          <div class="font-bold">${escapeHtml(d.name)}</div>
+          <div class="text-xs opacity-60">${GRADE_LABELS[d.grade] || d.grade} · الأعضاء: ${(d.memberStudentIds || []).length}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" data-members="${docu.id}">الأعضاء</button>
+        <button class="btn btn-outline btn-sm" data-edit="${docu.id}">تعديل</button>
+        <button class="btn btn-danger btn-sm" data-del="${docu.id}">حذف</button>
+      </div>`);
+  });
+  teamsAdminList.querySelectorAll("[data-members]").forEach(b => b.addEventListener("click", () => openTeamMembersPanel(b.dataset.members)));
+  teamsAdminList.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", () => editTeam(b.dataset.edit)));
+  teamsAdminList.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => delTeam(b.dataset.del)));
+}
+
+async function editTeam(id) {
+  const snap = await getDoc(doc(db, "teams", id));
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById("team_id").value = id;
+  document.getElementById("team_name").value = d.name || "";
+  document.getElementById("team_grade").value = d.grade || "1";
+  document.getElementById("teamCancelEdit").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function delTeam(id) {
+  if (!confirm("هل تريد حذف هذا الفريق نهائياً؟")) return;
+  await deleteDoc(doc(db, "teams", id));
+  loadTeamsAdmin();
+}
+
+document.getElementById("teamCancelEdit").addEventListener("click", () => {
+  teamForm.reset();
+  document.getElementById("team_id").value = "";
+  document.getElementById("teamCancelEdit").classList.add("hidden");
+});
+
+teamForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("team_id").value;
+  const payload = {
+    name: document.getElementById("team_name").value.trim(),
+    grade: document.getElementById("team_grade").value,
+    updatedAt: Date.now()
+  };
+  if (id) {
+    await updateDoc(doc(db, "teams", id), payload);
+  } else {
+    payload.createdAt = Date.now();
+    payload.memberStudentIds = [];
+    await addDoc(collection(db, "teams"), payload);
+  }
+  teamForm.reset();
+  document.getElementById("team_id").value = "";
+  document.getElementById("teamCancelEdit").classList.add("hidden");
+  loadTeamsAdmin();
+});
+
+async function openTeamMembersPanel(id) {
+  currentTeamMembersId = id;
+  const snap = await getDoc(doc(db, "teams", id));
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById("teamMembersTitle").textContent = `${d.name} — ${GRADE_LABELS[d.grade] || d.grade}`;
+  document.getElementById("teamMembersPanel").classList.remove("hidden");
+  const listEl = document.getElementById("teamMembersList");
+  listEl.innerHTML = `<div class="item-card skeleton h-12"></div>`;
+  const studentsSnap = await getDocs(query(collection(db, "students"), where("grade", "==", d.grade)));
+  if (studentsSnap.empty) {
+    listEl.innerHTML = `<p class="text-sm opacity-60">لا يوجد طلاب في هذه المرحلة.</p>`;
+    return;
+  }
+  const memberIds = d.memberStudentIds || [];
+  listEl.innerHTML = "";
+  studentsSnap.forEach(docu => {
+    const sd = docu.data();
+    const checked = memberIds.includes(docu.id) ? "checked" : "";
+    listEl.insertAdjacentHTML("beforeend", `
+      <label class="option-row">
+        <input type="checkbox" class="team-check" value="${docu.id}" ${checked}>
+        <span>${escapeHtml(sd.name)}</span>
+      </label>`);
+  });
+  document.getElementById("teamMembersPanel").scrollIntoView({ behavior: "smooth" });
+}
+
+document.getElementById("closeTeamMembersPanel").addEventListener("click", () => {
+  document.getElementById("teamMembersPanel").classList.add("hidden");
+  currentTeamMembersId = null;
+});
+
+document.getElementById("saveTeamMembersBtn").addEventListener("click", async () => {
+  if (!currentTeamMembersId) return;
+  const memberIds = [...document.querySelectorAll(".team-check:checked")].map(c => c.value);
+  await updateDoc(doc(db, "teams", currentTeamMembersId), { memberStudentIds: memberIds });
+  document.getElementById("teamMembersSavedMsg").classList.remove("hidden");
+  setTimeout(() => document.getElementById("teamMembersSavedMsg").classList.add("hidden"), 2500);
+  loadTeamsAdmin();
+});
+
 loadChallengeAdmin();
+loadTeamsAdmin();
