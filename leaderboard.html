@@ -19,14 +19,19 @@
   <div id="topList" class="flex flex-col gap-4">
     <div class="item-card skeleton h-20"></div>
   </div>
+
+  <h2 class="display text-2xl mt-12 mb-1">🛡️ ترتيب الفرق</h2>
+  <p class="mb-6" style="color:var(--ink-2)">تنافس الفرق حسب مجموع نقاط الأعضاء</p>
+  <div id="teamsRankList" class="flex flex-col gap-3">
+    <div class="item-card skeleton h-16"></div>
+  </div>
 </main>
 
 <div id="app-footer"></div>
 
 <script type="module">
   import { mountLayout, escapeHtml, GRADE_LABELS } from "/assets/js/main.js";
-  import { db, collection, getDocs, query, where } from "/assets/js/firebase-config.js";
-
+  import { db, collection, getDocs, getDoc, doc, query, where } from "/assets/js/firebase-config.js";
   mountLayout();
 
   const grades = ["1", "2", "3", "grammar"];
@@ -79,6 +84,52 @@
   }
 
   loadTops();
+  loadTeamsRanking();
+
+  async function loadTeamsRanking() {
+    const box = document.getElementById("teamsRankList");
+    try {
+      const teamsSnap = await getDocs(collection(db, "teams"));
+      if (teamsSnap.empty) { box.innerHTML = `<p class="text-sm opacity-60">لا توجد فرق بعد.</p>`; return; }
+
+      const teams = [];
+      teamsSnap.forEach(docu => teams.push({ id: docu.id, ...docu.data() }));
+
+      const scoresByStudent = {};
+      for (const g of grades) {
+        const q4 = query(collection(db, "examResults"), where("grade", "==", g));
+        const snap4 = await getDocs(q4);
+        snap4.forEach(docu => {
+          const r = docu.data();
+          const key = r.studentId;
+          if (!key) return;
+          scoresByStudent[key] = (scoresByStudent[key] || 0) + (Number(r.score) || 0);
+        });
+      }
+
+      const ranked = teams.map(t => {
+        const total = (t.memberStudentIds || []).reduce((sum, sid) => sum + (scoresByStudent[sid] || 0), 0);
+        return { ...t, total };
+      }).sort((a, b) => b.total - a.total);
+
+      box.innerHTML = "";
+      ranked.forEach((t, i) => {
+        const medal = ["🥇", "🥈", "🥉"][i] || `#${i + 1}`;
+        box.insertAdjacentHTML("beforeend", `
+          <div class="item-card">
+            <span class="text-2xl">${medal}</span>
+            <div class="flex-1">
+              <div class="font-bold">${escapeHtml(t.name)}</div>
+              <div class="text-xs opacity-60">${GRADE_LABELS[t.grade] || t.grade} · ${(t.memberStudentIds || []).length} أعضاء</div>
+            </div>
+            <span class="badge badge-exam">${t.total} نقطة</span>
+          </div>`);
+      });
+    } catch (e) {
+      box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل ترتيب الفرق.</p>`;
+      console.error(e);
+    }
+  }
 </script>
 </body>
 </html>
