@@ -3,17 +3,19 @@ export const GRADE_LABELS = {
   "1": "الأول الإعدادي",
   "2": "الثاني الإعدادي",
   "3": "الثالث الإعدادي",
-  "grammar": "النحو والبلاغة"
+  "grammar": "النحو والبلاغة",
+  "sec1": "الأول الثانوي"
+"sec2": "الثاني الثانوي"
 };
-
 export function renderHeader(activeGrade = "") {
   const student = getStudentSession();
   const navLinks = student
     ? `<a href="/grade.html?grade=${student.grade}" class="nav-link">${GRADE_LABELS[student.grade] || "قسمي"}</a>`
-    : `
-        <a href="/grade.html?grade=1" class="nav-link">الأول الإعدادي</a>
+    : `        <a href="/grade.html?grade=1" class="nav-link">الأول الإعدادي</a>
         <a href="/grade.html?grade=2" class="nav-link">الثاني الإعدادي</a>
         <a href="/grade.html?grade=3" class="nav-link">الثالث الإعدادي</a>
+        <a href="/grade.html?grade=sec1" class="nav-link">الأول الثانوي</a>
+        <a href="/grade.html?grade=sec2" class="nav-link">الثاني الثانوي</a>
         <a href="/grade.html?grade=grammar" class="nav-link">النحو والبلاغة</a>`;
   return `
   <header class="site-header">
