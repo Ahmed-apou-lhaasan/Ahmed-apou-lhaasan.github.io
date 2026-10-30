@@ -4,8 +4,8 @@ export const GRADE_LABELS = {
   "2": "الثاني الإعدادي",
   "3": "الثالث الإعدادي",
   "grammar": "النحو والبلاغة",
-  "sec1": "الأول الثانوي"
-"sec2": "الثاني الثانوي"
+  "sec1": "الأول الثانوي",
+  "sec2": "الثاني الثانوي"
 };
 export function renderHeader(activeGrade = "") {
   const student = getStudentSession();
