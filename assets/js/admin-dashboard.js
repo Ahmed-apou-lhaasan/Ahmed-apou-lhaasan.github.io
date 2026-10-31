@@ -408,7 +408,8 @@ async function loadStudentsAdmin() {
     if (!byGrade[d.grade]) byGrade[d.grade] = [];
     byGrade[d.grade].push({ id: docu.id, ...d });
   });
-  const gradeOrder = ["1", "2", "3", "grammar"];
+    const known = ["1", "2", "3", "sec1", "sec2", "grammar"];
+  const gradeOrder = [...known, ...Object.keys(byGrade).filter(g => !known.includes(g))];
   studentsAdminList.innerHTML = "";
   gradeOrder.forEach(g => {
     if (!byGrade[g] || byGrade[g].length === 0) return;
