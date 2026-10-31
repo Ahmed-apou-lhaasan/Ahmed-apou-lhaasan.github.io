@@ -77,13 +77,14 @@
     try {
       const q = query(collection(db, "students"), where("grade", "==", gradeSel.value));
       const snap = await getDocs(q);
-      let chosen = null;
+            const matches = [];
       snap.forEach(docu => {
         const d = docu.data();
         if ((d.name || "").trim().toLowerCase() === typedName.toLowerCase()) {
-          chosen = { id: docu.id, ...d };
+          matches.push({ id: docu.id, ...d });
         }
       });
+      const chosen = matches.find(m => String(m.code || "").trim() === code) || matches[0] || null;
       if (!chosen) {
         errorMsg.textContent = "لم يتم العثور على اسمك في هذه المرحلة، تأكد من كتابته بالضبط كما سجّله المعلم";
         errorMsg.classList.remove("hidden");
