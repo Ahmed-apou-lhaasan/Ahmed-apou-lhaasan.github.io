@@ -69,7 +69,27 @@
         </div>
         <div>
           <label class="field-label">ترتيب الظهور (رقم)</label>
-          <input id="lesson_order" type="number" value="1" class="field">
+                  <div>
+          <label class="field-label">فرع المادة</label>
+          <select id="lesson_branch" class="field">
+            <option value="">بدون تصنيف</option>
+            <option value="نحو">نحو</option>
+            <option value="نصوص">نصوص</option>
+            <option value="قراءة">قراءة</option>
+            <option value="بلاغة">بلاغة</option>
+            <option value="قصة">قصة</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">رابط ملزمة PDF (اختياري)</label>
+          <input id="lesson_pdf" class="field" placeholder="https://drive.google.com/file/d/.../preview">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="field-label">امتحان الدرس (اختياري)</label>
+          <select id="lesson_exam" class="field">
+            <option value="">بدون امتحان</option>
+          </select>
+        </div>
         </div>
         <div class="sm:col-span-2 flex gap-3">
           <button type="submit" class="btn btn-primary">حفظ الدرس</button>
