@@ -18,7 +18,8 @@
 
   <section class="mb-10">
     <h2 class="text-xl font-bold mb-3" style="color:var(--ink-2)">📘 الدروس</h2>
-    <div id="lessonsList" class="flex flex-col gap-3">
+    <div id="branchPills" class="pill-row"></div>
+    <div id="lessonsList" class="flex flex-col gap-5">
       <div class="item-card skeleton h-16"></div>
       <div class="item-card skeleton h-16"></div>
     </div>
@@ -54,7 +55,7 @@
 
 <script type="module">
   import { mountLayout, GRADE_LABELS, escapeHtml, getStudentSession } from "/assets/js/main.js";
-  import { db, collection, getDocs, query, where, orderBy } from "/assets/js/firebase-config.js";
+  import { db, collection, getDocs, query, where } from "/assets/js/firebase-config.js";
 
   mountLayout();
 
@@ -69,107 +70,126 @@
   }
   document.getElementById("pageTitle").textContent = GRADE_LABELS[grade] || "الدروس";
 
-  const typeMeta = {
-    video: { label: "فيديو", cls: "badge-video", icon: "🎬" },
-    pdf:   { label: "PDF",   cls: "badge-pdf",   icon: "📄" },
-    text:  { label: "نص",    cls: "badge-text",  icon: "📖" }
-  };
+  const DAY = 24 * 60 * 60 * 1000;
+  const BRANCHES = ["نحو", "نصوص", "قراءة", "بلاغة", "قصة"];
+  const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSekHyyW4bzLLTTs0ArEW0Q5OAjChLXEvCgYiNB8LfsMe6IGew/viewform";
+
+  let allLessons = [];
+  let resultsByExam = {};
+  let activeBranch = "";
+
+  async function loadMyResults() {
+    if (!studentSession) return;
+    try {
+      const snap = await getDocs(query(collection(db, "examResults"), where("studentId", "==", studentSession.id)));
+      snap.forEach(docu => {
+        const r = docu.data();
+        if (r.examId) resultsByExam[r.examId] = r;
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function renderPills() {
+    const box = document.getElementById("branchPills");
+    const items = [{ v: "", label: "الكل" }, ...BRANCHES.map(b => ({ v: b, label: b }))];
+    box.innerHTML = items.map(i =>
+      `<button type="button" class="pill ${activeBranch === i.v ? "active" : ""}" data-branch="${i.v}">${i.label}</button>`
+    ).join("");
+    box.querySelectorAll("[data-branch]").forEach(b => {
+      b.addEventListener("click", () => {
+        activeBranch = b.dataset.branch;
+        renderPills();
+        renderLessons();
+      });
+    });
+  }
+
+  function renderLessons() {
+    const box = document.getElementById("lessonsList");
+    const none = document.getElementById("noLessons");
+    const visible = allLessons.filter(l => !activeBranch || l.branch === activeBranch);
+    box.innerHTML = "";
+    if (visible.length === 0) {
+      none.textContent = activeBranch
+        ? `لا توجد دروس في فرع "${activeBranch}" بعد.`
+        : "لا توجد دروس مضافة بعد في هذا القسم.";
+      none.classList.remove("hidden");
+      return;
+    }
+    none.classList.add("hidden");
+
+    visible.forEach(d => {
+      const featured = allLessons[0] && d.id === allLessons[0].id;
+      const fresh = d.createdAt && (Date.now() - d.createdAt) < 3 * DAY;
+      const date = d.createdAt ? new Date(d.createdAt).toLocaleDateString("ar-EG") : "";
+      const pdfUrl = d.pdfUrl || (d.type === "pdf" ? d.content : "");
+      const hasExplain = d.type !== "pdf";
+      const result = d.examId ? resultsByExam[d.examId] : null;
+
+      const flagHtml = featured
+        ? `<span class="unit-flag">${fresh ? "🔥 جديد" : "✨ الأحدث"}</span>`
+        : (fresh ? `<span class="unit-flag mild">🆕 جديد</span>` : "");
+      const tagHtml = d.branch ? `<span class="unit-tag">${escapeHtml(d.branch)}</span>` : "";
+      const dateHtml = date ? `<span>${date}</span>` : "";
+
+      let statusHtml = "";
+      if (d.examId) {
+        if (result) {
+          const pct = result.total ? Math.round((result.score / result.total) * 100) : 0;
+          statusHtml = `<span class="unit-status done">✅ تم الإنجاز · ${result.score}/${result.total} (${pct}%)</span>`;
+        } else {
+          statusHtml = `<span class="unit-status todo">⏳ لم يكتمل</span>`;
+        }
+      }
+
+      const actions = [];
+      if (hasExplain) {
+        actions.push(`<a class="unit-btn explain" href="/lesson.html?id=${d.id}">${d.type === "video" ? "🎬" : "📖"} الشرح</a>`);
+      }
+      if (pdfUrl) {
+        actions.push(`<a class="unit-btn pdf" href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener">📄 الملزمة</a>`);
+      }
+      if (d.examId) {
+        actions.push(`<a class="unit-btn exam" href="/exam.html?id=${d.examId}">🏆 ${result ? "نتيجة الامتحان" : "امتحان الدرس"}</a>`);
+      }
+      if (actions.length === 0) {
+        actions.push(`<a class="unit-btn explain" href="/lesson.html?id=${d.id}">📖 الشرح</a>`);
+      }
+
+      box.insertAdjacentHTML("beforeend", `
+        <div class="unit-card ${featured ? "featured" : ""} ${result ? "completed" : ""}">
+          ${flagHtml}
+          <div class="unit-head">
+            <div class="unit-num">${d.seq}</div>
+            <div class="flex-1">
+              <div class="unit-title">${escapeHtml(d.title || "بدون عنوان")}</div>
+              <div class="unit-meta">${tagHtml}${dateHtml}</div>
+            </div>
+          </div>
+          ${statusHtml}
+          <div class="unit-actions">${actions.join("")}</div>
+        </div>`);
+    });
+  }
 
   async function loadLessons() {
     const box = document.getElementById("lessonsList");
     try {
-      const q = query(collection(db, "lessons"), where("grade", "==", grade));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        box.innerHTML = "";
-        document.getElementById("noLessons").classList.remove("hidden");
-        return;
-      }
-      const lessons = [];
-      snap.forEach(docu => lessons.push({ id: docu.id, ...docu.data() }));
-      lessons.sort((a, b) => (a.order || 0) - (b.order || 0));
-      box.innerHTML = "";
-      const isNew = (createdAt) => createdAt && (Date.now() - createdAt) < (3 * 24 * 60 * 60 * 1000);
-      lessons.forEach(d => {
-        const meta = typeMeta[d.type] || typeMeta.text;
-        const newBadge = isNew(d.createdAt) ? `<span class="badge" style="background:#fdecea;color:var(--clay)">🆕 جديد</span>` : "";
-        box.insertAdjacentHTML("beforeend", `
-          <a href="/lesson.html?id=${d.id}" class="item-card">
-            <span class="text-2xl">${meta.icon}</span>
-            <div class="flex-1">
-              <div class="font-bold">${escapeHtml(d.title || "بدون عنوان")}</div>
-            </div>
-            ${newBadge}
-            <span class="badge ${meta.cls}">${meta.label}</span>
-          </a>`);
-      });
+      const [snap] = await Promise.all([
+        getDocs(query(collection(db, "lessons"), where("grade", "==", grade))),
+        loadMyResults()
+      ]);
+      const rows = [];
+      snap.forEach(docu => rows.push({ id: docu.id, ...docu.data() }));
+      rows.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      rows.forEach((r, i) => { r.seq = i + 1; });
+      allLessons = rows.slice().reverse();
+      renderPills();
+      renderLessons();
     } catch (e) {
       box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل الدروس. تأكد من إعداد Firebase بشكل صحيح.</p>`;
-      console.error(e);
-    }
-  }
-
-  async function loadExams() {
-    const box = document.getElementById("examsList");
-    try {
-      const q = query(collection(db, "exams"), where("grade", "==", grade));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        box.innerHTML = "";
-        document.getElementById("noExams").classList.remove("hidden");
-        return;
-      }
-      box.innerHTML = "";
-      snap.forEach(docu => {
-        const d = docu.data();
-        const isNewExam = d.createdAt && (Date.now() - d.createdAt) < (3 * 24 * 60 * 60 * 1000);
-        const newBadge = isNewExam ? `<span class="badge" style="background:#fdecea;color:var(--clay)">🆕 جديد</span>` : "";
-        box.insertAdjacentHTML("beforeend", `
-          <a href="/exam.html?id=${docu.id}" class="item-card">
-            <span class="text-2xl">📝</span>
-            <div class="flex-1">
-              <div class="font-bold">${escapeHtml(d.title || "امتحان")}</div>
-              <div class="text-xs opacity-60">${(d.questions || []).length} سؤال</div>
-            </div>
-            ${newBadge}
-            <span class="badge badge-exam">ابدأ الامتحان</span>
-          </a>`);
-      });
-    } catch (e) {
-      box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل الامتحانات.</p>`;
-      console.error(e);
-    }
-  }
-
-  async function loadHomework() {
-    const box = document.getElementById("homeworkList");
-    try {
-      const q = query(collection(db, "homework"), where("grade", "==", grade));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        box.innerHTML = "";
-        document.getElementById("noHomework").classList.remove("hidden");
-        return;
-      }
-      const rows = [];
-      snap.forEach(docu => rows.push(docu.data()));
-      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      box.innerHTML = "";
-      rows.forEach(d => {
-        const dueLine = d.dueDate ? `<div class="text-xs opacity-60 mt-1">آخر موعد للتسليم: ${escapeHtml(d.dueDate)}</div>` : "";
-        box.insertAdjacentHTML("beforeend", `
-          <div class="item-card items-start">
-            <span class="text-2xl">📚</span>
-            <div class="flex-1">
-              <div class="font-bold">${escapeHtml(d.title || "واجب")}</div>
-              <div class="text-sm mt-1 whitespace-pre-wrap" style="color:var(--ink-2)">${escapeHtml(d.content || "")}</div>
-              ${dueLine}
-              <a href="https://docs.google.com/forms/d/e/1FAIpQLSekHyyW4bzLLTTs0ArEW0Q5OAjChLXEvCgYiNB8LfsMe6IGew/viewform" target="_blank" class="btn btn-gold btn-sm mt-3 inline-flex">📤 قدّم الواجب</a>
-            </div>
-          </div>`);
-      });
-    } catch (e) {
-      box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل الواجبات.</p>`;
       console.error(e);
     }
   }
@@ -211,10 +231,81 @@
     }
   }
 
-  loadLessons();
-  loadHomework();
-  loadChallenge();
-  loadExams();
+  async function loadHomework() {
+    const box = document.getElementById("homeworkList");
+    try {
+      const q = query(collection(db, "homework"), where("grade", "==", grade));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        box.innerHTML = "";
+        document.getElementById("noHomework").classList.remove("hidden");
+        return;
+      }
+      const rows = [];
+      snap.forEach(docu => rows.push(docu.data()));
+      rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      box.innerHTML = "";
+      rows.forEach(d => {
+        const dueLine = d.dueDate ? `<div class="text-xs opacity-60 mt-1">آخر موعد للتسليم: ${escapeHtml(d.dueDate)}</div>` : "";
+        box.insertAdjacentHTML("beforeend", `
+          <div class="item-card items-start">
+            <span class="text-2xl">📚</span>
+            <div class="flex-1">
+              <div class="font-bold">${escapeHtml(d.title || "واجب")}</div>
+              <div class="text-sm mt-1 whitespace-pre-wrap" style="color:var(--ink-2)">${escapeHtml(d.content || "")}</div>
+              ${dueLine}
+              <a href="${FORM_URL}" target="_blank" class="btn btn-gold btn-sm mt-3 inline-flex">📤 قدّم الواجب</a>
+            </div>
+          </div>`);
+      });
+    } catch (e) {
+      box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل الواجبات.</p>`;
+      console.error(e);
+    }
+  }
+
+  async function loadExams() {
+    const box = document.getElementById("examsList");
+    try {
+      const q = query(collection(db, "exams"), where("grade", "==", grade));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        box.innerHTML = "";
+        document.getElementById("noExams").classList.remove("hidden");
+        return;
+      }
+      box.innerHTML = "";
+      snap.forEach(docu => {
+        const d = docu.data();
+        const isNewExam = d.createdAt && (Date.now() - d.createdAt) < 3 * DAY;
+        const newBadge = isNewExam ? `<span class="badge" style="background:#fdecea;color:var(--clay)">🆕 جديد</span>` : "";
+        const done = resultsByExam[docu.id];
+        const actionBadge = done
+          ? `<span class="badge" style="background:rgba(67,170,139,.22);color:var(--success)">✅ تم الحل ${done.score}/${done.total}</span>`
+          : `<span class="badge badge-exam">ابدأ الامتحان</span>`;
+        box.insertAdjacentHTML("beforeend", `
+          <a href="/exam.html?id=${docu.id}" class="item-card">
+            <span class="text-2xl">📝</span>
+            <div class="flex-1">
+              <div class="font-bold">${escapeHtml(d.title || "امتحان")}</div>
+              <div class="text-xs opacity-60">${(d.questions || []).length} سؤال</div>
+            </div>
+            ${newBadge}
+            ${actionBadge}
+          </a>`);
+      });
+    } catch (e) {
+      box.innerHTML = `<p class="text-sm" style="color:var(--danger)">تعذّر تحميل الامتحانات.</p>`;
+      console.error(e);
+    }
+  }
+
+  (async () => {
+    await loadLessons();
+    loadChallenge();
+    loadHomework();
+    loadExams();
+  })();
 </script>
 </body>
 </html>
