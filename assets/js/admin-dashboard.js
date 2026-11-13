@@ -4,6 +4,49 @@ import {
 } from "/assets/js/firebase-config.js";
 import { escapeHtml, GRADE_LABELS } from "/assets/js/main.js";
 
+/* ============== أرقام أولياء الأمور (خاصة بالمعلم فقط) ============== */
+function waLink(phone, text) {
+  let p = String(phone || "").replace(/\D/g, "");
+  if (!p) return "";
+  if (p.startsWith("00")) p = p.slice(2);
+  else if (p.startsWith("0")) p = "20" + p.slice(1);
+  else if (p.length === 10 && p.startsWith("1")) p = "20" + p;
+  return `https://wa.me/${p}?text=${encodeURIComponent(text)}`;
+}
+
+let parentPhonesPromise = null;
+function getParentPhones(force = false) {
+  if (!parentPhonesPromise || force) {
+    parentPhonesPromise = getDocs(collection(db, "parentContacts"))
+      .then(snap => {
+        const m = {};
+        snap.forEach(d => { m[d.id] = d.data().phone || ""; });
+        return m;
+      })
+      .catch(() => ({}));
+  }
+  return parentPhonesPromise;
+}
+
+function parentBtns(sid, phone, text) {
+  if (!phone) {
+    return `<button class="btn btn-outline btn-sm" data-setphone="${sid}">➕ رقم ولي الأمر</button>`;
+  }
+  return `<a class="btn btn-gold btn-sm" target="_blank" rel="noopener" href="${waLink(phone, text)}">📱 ولي الأمر</a>
+    <button class="btn btn-outline btn-sm" data-setphone="${sid}" title="تعديل الرقم">✏️</button>`;
+}
+
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-setphone]");
+  if (!b) return;
+  const v = prompt("اكتب رقم واتساب ولي الأمر (مثال: 01012345678):");
+  if (!v || !v.trim()) return;
+  await setDoc(doc(db, "parentContacts", b.dataset.setphone), { phone: v.trim() });
+  await getParentPhones(true);
+  loadAbsenceAlerts();
+  loadPaymentRoster();
+});
+
 /* ============== حراسة الدخول: لازم يكون المعلم مسجّل دخول ============== */
 onAuthStateChanged(auth, (user) => {
   if (!user) location.href = "/admin/login.html";
@@ -437,12 +480,14 @@ async function loadStudentsAdmin() {
 studentForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const code = String(Math.floor(1000 + Math.random() * 9000));
-  await addDoc(collection(db, "students"), {
+    const newStudentRef = await addDoc(collection(db, "students"), {
     name: document.getElementById("student_name").value.trim(),
     grade: document.getElementById("student_grade").value,
     code,
     createdAt: Date.now()
   });
+    const parentPhone = document.getElementById("student_parent_phone").value.trim();
+  if (parentPhone) await setDoc(doc(db, "parentContacts", newStudentRef.id), { phone: parentPhone });
   studentForm.reset();
   loadStudentsAdmin();
   alert(`تم إضافة الطالب بنجاح. الكود السري الخاص به: ${code}\nاكتبه وسلّمه للطالب.`);
@@ -611,6 +656,7 @@ async function loadAbsenceAlerts() {
     });
   });
 
+    const phones = await getParentPhones();
   const threshold = Number(absenceThresholdSel.value);
   const rows = Object.entries(counts)
     .filter(([sid, count]) => count >= threshold && studentsMap[sid])
@@ -631,7 +677,8 @@ async function loadAbsenceAlerts() {
           <div class="font-bold">${escapeHtml(r.name)}</div>
           <div class="text-xs opacity-60">${GRADE_LABELS[r.grade] || r.grade}</div>
         </div>
-        <span class="badge" style="background:#fbeae7;color:var(--danger)">${r.count} غياب</span>
+                <span class="badge" style="background:#fbeae7;color:var(--danger)">${r.count} غياب</span>
+        ${parentBtns(r.sid, phones[r.sid], `السلام عليكم، ولي أمر الطالب ${r.name}. نود إبلاغكم أن عدد مرات غياب الطالب عن حصص اللغة العربية بلغ ${r.count} مرات، برجاء المتابعة. أ/ أحمد أبوالحسن`)}
       </div>`);
   });
 }
@@ -659,7 +706,8 @@ async function loadPaymentRoster() {
   }
   const paidIds = paySnap.exists() ? (paySnap.data().paidStudentIds || []) : [];
   paymentStudentList.innerHTML = "";
-  const unpaidBox = document.getElementById("unpaidAlertsList");
+    const unpaidBox = document.getElementById("unpaidAlertsList");
+  const phones = await getParentPhones();
   const unpaidRows = [];
   studentsSnap.forEach(docu => {
     const d = docu.data();
@@ -670,7 +718,7 @@ async function loadPaymentRoster() {
         <span>${escapeHtml(d.name)}</span>
         <span class="text-xs opacity-50">(علّم عند الدفع)</span>
       </label>`);
-    if (!paidIds.includes(docu.id)) unpaidRows.push(d);
+        if (!paidIds.includes(docu.id)) unpaidRows.push({ ...d, id: docu.id });
   });
   if (unpaidRows.length === 0) {
     unpaidBox.innerHTML = `<p class="text-sm opacity-60">كل الطلاب دفعوا هذا الشهر 🎉</p>`;
@@ -683,7 +731,8 @@ async function loadPaymentRoster() {
           <div class="flex-1">
             <div class="font-bold">${escapeHtml(d.name)}</div>
           </div>
-          <span class="badge" style="background:#fbeae7;color:var(--danger)">لم يدفع</span>
+                    <span class="badge" style="background:#fbeae7;color:var(--danger)">لم يدفع</span>
+          ${parentBtns(d.id, phones[d.id], `السلام عليكم، ولي أمر الطالب ${d.name}. تذكير ودي بأن مصروفات شهر ${payMonthInput.value} لم يتم تسجيلها بعد، نشكر لكم تعاونكم. أ/ أحمد أبوالحسن`)}
         </div>`);
     });
   }
