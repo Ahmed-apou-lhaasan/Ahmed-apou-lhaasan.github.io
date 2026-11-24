@@ -170,7 +170,8 @@
       if (isCorrect) correct++;
       const opts = q.options || [];
       answersDetail.push({
-        question: q.text || "",
+                question: q.text || "",
+        topic: q.topic || "",
         chosenText: chosenVal >= 0 ? (opts[chosenVal] || "لم يجب") : "لم يجب",
         correctText: opts[q.correctIndex] || "",
         isCorrect
