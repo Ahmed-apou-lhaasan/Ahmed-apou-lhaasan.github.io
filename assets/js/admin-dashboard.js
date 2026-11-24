@@ -161,7 +161,8 @@ function addQuestionRow(qData = null) {
       <span class="font-bold text-sm">سؤال</span>
       <button type="button" class="btn btn-danger btn-sm" data-remove-q>حذف السؤال</button>
     </div>
-    <input class="field mb-2 q-text" placeholder="نص السؤال" value="${qData ? escapeHtml(qData.text) : ""}">
+        <input class="field mb-2 q-text" placeholder="نص السؤال" value="${qData ? escapeHtml(qData.text) : ""}">
+    <input class="field mb-2 q-topic" placeholder="التصنيف (اختياري): إعراب، جمع، بلاغة..." value="${qData && qData.topic ? escapeHtml(qData.topic) : ""}">
     <select class="field mb-2 q-type">
       <option value="mcq" ${type === "mcq" ? "selected" : ""}>اختيار من متعدد</option>
       <option value="tf" ${type === "tf" ? "selected" : ""}>صح / خطأ</option>
@@ -204,6 +205,8 @@ document.getElementById("importQuestionsBtn").addEventListener("click", () => {
   let imported = 0;
   blocks.forEach(block => {
     const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+        let topic = "";
+    if (lines[0] && lines[0].startsWith("#")) topic = lines.shift().slice(1).trim();
     if (lines.length < 3) return;
     const questionText = lines[0];
     const options = [];
@@ -216,7 +219,7 @@ document.getElementById("importQuestionsBtn").addEventListener("click", () => {
         options.push(line);
       }
     });
-    addQuestionRow({ text: questionText, type: "mcq", options, correctIndex });
+        addQuestionRow({ text: questionText, type: "mcq", options, correctIndex, topic });
     imported++;
   });
   if (imported > 0) {
@@ -241,6 +244,8 @@ function collectQuestions() {
       questions.push({ text, type: "mcq", options, correctIndex: checked ? Number(checked.value) : 0 });
     }
   });
+    const wraps = [...questionsBuilder.querySelectorAll("[data-qid]")];
+  questions.forEach((q, i) => { q.topic = wraps[i].querySelector(".q-topic").value.trim(); });
   return questions;
 }
 
