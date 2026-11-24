@@ -714,3 +714,52 @@ select option{background:#12182f; color:#F5ECD6}
 .unit-btn.explain{background:linear-gradient(135deg,#3EC1D3,#2A8FB5)}
 .unit-btn.pdf{background:linear-gradient(135deg,#F9A03F,#E4572E)}
 .unit-btn.exam{background:linear-gradient(135deg,#9B5DE5,#E85D75)}
+/* ============================================================
+   مساعد الأستاذ أحمد
+   ============================================================ */
+.assistant-card{
+  position:relative; margin-bottom:1.5rem; padding:1.1rem;
+  border-radius:22px;
+  background:linear-gradient(135deg, rgba(62,193,211,.14), rgba(155,93,229,.12));
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  border:1px solid rgba(62,193,211,.4);
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.7);
+  animation:fadeInUp .5s ease both;
+}
+.assistant-head{display:flex; align-items:center; gap:.8rem; margin-bottom:.9rem}
+.assistant-avatar{
+  width:48px; height:48px; border-radius:50%; font-size:1.6rem;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 30% 30%, #7fe0ee, #2A8FB5);
+  box-shadow:0 0 0 3px rgba(62,193,211,.25);
+  animation:owlBob 3s ease-in-out infinite;
+}
+@keyframes owlBob{0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)}}
+.bubble{
+  display:flex; gap:.6rem; align-items:flex-start;
+  margin-bottom:.6rem; padding:.7rem .85rem;
+  border-radius:16px 16px 4px 16px;
+  background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.12);
+  font-size:.92rem; line-height:1.7;
+  animation:bubbleIn .5s ease both;
+}
+@keyframes bubbleIn{
+  from{opacity:0; transform:translateY(10px) scale(.97)}
+  to{opacity:1; transform:translateY(0) scale(1)}
+}
+.bubble-ico{font-size:1.3rem; line-height:1.4}
+.bubble-cta{
+  display:inline-block; margin-top:.4rem;
+  padding:.3rem .8rem; border-radius:99px;
+  font-size:.8rem; font-weight:800; text-decoration:none;
+  color:#14100a; background:linear-gradient(135deg,#F0CF8A,#B8863C);
+  transition:transform .15s;
+}
+.bubble-cta:active{transform:scale(.94)}
+.weak-box{margin-top:.9rem; padding:.8rem; border-radius:16px; background:rgba(0,0,0,.18)}
+.weak-row{margin-bottom:.6rem}
+.weak-track{height:8px; border-radius:99px; background:rgba(255,255,255,.12); overflow:hidden}
+.weak-fill{height:100%; border-radius:99px; background:linear-gradient(90deg,#43AA8B,#6FE3A1); transition:width 1s ease}
+.weak-fill.mid{background:linear-gradient(90deg,#F9A03F,#F9C74F)}
+.weak-fill.low{background:linear-gradient(90deg,#E85D75,#FF8A80)}
