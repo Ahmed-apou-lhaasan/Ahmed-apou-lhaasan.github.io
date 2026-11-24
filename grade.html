@@ -55,8 +55,8 @@
 
 <script type="module">
   import { mountLayout, GRADE_LABELS, escapeHtml, getStudentSession } from "/assets/js/main.js";
-  import { db, collection, getDocs, query, where } from "/assets/js/firebase-config.js";
-
+    import { db, collection, getDocs, query, where } from "/assets/js/firebase-config.js";
+  import { mountAssistant } from "/assets/js/assistant.js";
   mountLayout();
 
   const studentSession = getStudentSession();
@@ -302,9 +302,10 @@
 
   (async () => {
     await loadLessons();
-    loadChallenge();
+        loadChallenge();
     loadHomework();
     loadExams();
+    mountAssistant();
   })();
 </script>
 </body>
